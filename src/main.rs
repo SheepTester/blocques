@@ -1,3 +1,5 @@
+mod blocques;
+
 fn main() {
-    println!("Hello, world!");
+    blocques::main();
 }
