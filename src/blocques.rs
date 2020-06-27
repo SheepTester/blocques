@@ -38,12 +38,12 @@ pub fn main() {
         &indices
     ).unwrap();
 
-    renderer.start(Box::new(move |total_elapsed, _elapsed, _| {
+    renderer.start(Box::new(move |total_elapsed, _elapsed| {
         let model = Matrix4::from_euler_angles(
             PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
             total_elapsed * 2.0 * PI / 5.0,
             0.0,
         ).append_translation(&Vector3::new(0.0, 0.0, -2.0));
-        (&vertex_buffer, &index_buffer, model, &texture)
-    }));
+        model
+    }), (vertex_buffer, index_buffer, texture));
 }
