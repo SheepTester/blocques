@@ -22,12 +22,29 @@ use std::{time::{Instant, Duration}, f32::consts::PI};
 use nalgebra::Matrix4;
 use super::utils::Vertex;
 
+pub struct RenderValues {
+    pub vertex_buffer: Option<VertexBuffer<Vertex>>,
+    pub index_buffer: Option<IndexBuffer<u16>>,
+    pub model: Option<Matrix4<f32>>,
+    pub texture: Option<Texture2d>,
+}
+
+impl Default for RenderValues {
+    fn default() -> Self {
+        Self {
+            vertex_buffer: None,
+            index_buffer: None,
+            model: None,
+            texture: None,
+        }
+    }
+}
+
 pub struct Renderer {
     pub event_loop: EventLoop<()>,
     pub display: Display,
     pub program: Program,
 }
-
 
 impl Renderer {
     pub fn new() -> Self {
@@ -50,7 +67,7 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, draw: Box<dyn Fn(f32, f32) -> Matrix4<f32>>, (vertex_buffer, index_buffer, texture): (VertexBuffer<Vertex>, IndexBuffer<u16>, Texture2d)) {
+    pub fn start(self, draw: Box<dyn Fn(f32, f32) -> RenderValues>, static_values: RenderValues) {
         let display = self.display;
         let event_loop = self.event_loop;
         let program = self.program;
@@ -83,21 +100,30 @@ impl Renderer {
                 0.1,
                 1024.0,
             );
+
             let perspective_ref = perspective.as_ref();
             target.clear_color_and_depth((0.0, 0.5, 1.0, 1.0), 1.0);
-            let model = draw(
+
+            let dynamic_values = draw(
                 total_elapsed,
                 elapsed,
             );
+            // Panic if value not given in static and dynamic values
+            let vertex_buffer = static_values.vertex_buffer.as_ref().or_else(|| dynamic_values.vertex_buffer.as_ref()).unwrap();
+            let index_buffer = static_values.index_buffer.as_ref().or_else(|| dynamic_values.index_buffer.as_ref()).unwrap();
+            let model = static_values.model.as_ref().or_else(|| dynamic_values.model.as_ref()).unwrap();
+            let texture = static_values.texture.as_ref().or_else(|| dynamic_values.texture.as_ref()).unwrap();
+
             let model_ref = model.as_ref();
+
             target.draw(
-                &vertex_buffer,
-                &index_buffer,
+                vertex_buffer,
+                index_buffer,
                 &program,
                 &uniform! {
                     matrix: *model_ref,
                     perspective: *perspective_ref,
-                    tex: &texture,
+                    tex: texture,
                 },
                 &params,
             ).unwrap();

@@ -1,5 +1,5 @@
 use super::utils::{self, Vertex};
-use super::rendering::Renderer;
+use super::rendering::{Renderer, RenderValues};
 use glium::{
     texture::Texture2d,
     VertexBuffer,
@@ -44,6 +44,14 @@ pub fn main() {
             total_elapsed * 2.0 * PI / 5.0,
             0.0,
         ).append_translation(&Vector3::new(0.0, 0.0, -2.0));
-        model
-    }), (vertex_buffer, index_buffer, texture));
+        RenderValues {
+            model: Some(model),
+            ..RenderValues::default()
+        }
+    }), RenderValues {
+        vertex_buffer: Some(vertex_buffer),
+        index_buffer: Some(index_buffer),
+        texture: Some(texture),
+        ..RenderValues::default()
+    });
 }
