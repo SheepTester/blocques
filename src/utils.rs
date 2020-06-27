@@ -4,8 +4,8 @@ use std::io::Cursor;
 
 #[derive(Copy, Clone)]
 pub struct Vertex {
-    position: [f32; 3],
-    tex_coords: [f32; 2],
+    pub position: [f32; 3],
+    pub tex_coords: [f32; 2],
 }
 implement_vertex!(Vertex, position, tex_coords);
 

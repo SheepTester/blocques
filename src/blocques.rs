@@ -1,7 +1,5 @@
-mod rendering;
-mod utils;
-
-use utils::Vertex;
+use super::utils::{self, Vertex};
+use super::rendering;
 use glium::{
     texture::Texture2d,
     VertexBuffer,
@@ -11,6 +9,7 @@ use glium::{
     draw_parameters::{DepthTest, BackfaceCullingMode},
     Depth,
     uniform,
+    Surface,
 };
 use nalgebra::{Matrix4, Vector3};
 use std::f32::consts::PI;
@@ -18,6 +17,7 @@ use std::f32::consts::PI;
 pub fn main() {
     let (event_loop, display, program) = rendering::init();
 
+    let image = utils::load_image(include_bytes!("./assets/blocques.png"));
     let texture = Texture2d::new(&display, image).unwrap();
 
     let vertices = vec![
@@ -37,7 +37,7 @@ pub fn main() {
         &indices
     ).unwrap();
 
-    rendering::start(event_loop, move |total_elapsed, elapsed| {
+    rendering::start(event_loop, Box::new(move |total_elapsed, _elapsed| {
         let mut target = display.draw();
         let (width, height) = target.get_dimensions();
         let model = Matrix4::from_euler_angles(
@@ -75,5 +75,5 @@ pub fn main() {
             &params,
         ).unwrap();
         target.finish().unwrap();
-    });
+    }));
 }
