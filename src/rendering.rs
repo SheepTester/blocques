@@ -9,9 +9,18 @@ use glium::{
         event::{WindowEvent, Event},
     },
     Surface,
+    VertexBuffer,
+    IndexBuffer,
+    texture::Texture2d,
+    index::PrimitiveType,
+    DrawParameters,
+    draw_parameters::{DepthTest, BackfaceCullingMode},
+    Depth,
+    uniform,
 };
 use std::{time::{Instant, Duration}, f32::consts::PI};
 use nalgebra::Matrix4;
+use super::utils::Vertex;
 
 pub struct Renderer {
     pub event_loop: EventLoop<()>,
@@ -41,11 +50,24 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, draw: Box<dyn Fn(&mut Frame, &[[f32; 4]; 4], f32, f32)>) {
-        let start = Instant::now();
-        let mut last_time = start;
+    pub fn start(self, draw: Box<dyn Fn(f32, f32) -> (&VertexBuffer<Vertex>, &IndexBuffer<u16>, &[[f32; 4]; 4], &Texture2d)>) {
         let display = self.display;
         let event_loop = self.event_loop;
+        let program = self.program;
+
+        let params = DrawParameters {
+            depth: Depth {
+                test: DepthTest::IfLess,
+                write: true,
+                ..Default::default()
+            },
+            backface_culling: BackfaceCullingMode::CullClockwise,
+            ..Default::default()
+        };
+
+        let start = Instant::now();
+        let mut last_time = start;
+
         event_loop.run(move |ev, _, control_flow| {
             let now = Instant::now();
             let next_frame_time = now + Duration::from_nanos(16_666_667);
@@ -63,7 +85,21 @@ impl Renderer {
             );
             let perspective_ref = perspective.as_ref();
             target.clear_color_and_depth((0.0, 0.5, 1.0, 1.0), 1.0);
-            draw(&mut target, perspective_ref, total_elapsed, elapsed);
+            let (vertex_buffer, index_buffer, model_ref, texture) = draw(
+                total_elapsed,
+                elapsed,
+            );
+            target.draw(
+                vertex_buffer,
+                index_buffer,
+                &program,
+                &uniform! {
+                    matrix: *model_ref,
+                    perspective: *perspective_ref,
+                    tex: texture,
+                },
+                &params,
+            ).unwrap();
             target.finish().unwrap();
 
             *control_flow = ControlFlow::WaitUntil(next_frame_time);

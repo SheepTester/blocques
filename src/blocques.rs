@@ -38,32 +38,13 @@ pub fn main() {
         &indices
     ).unwrap();
 
-    renderer.start(Box::new(move |target, perspective_ref, total_elapsed, _elapsed| {
+    renderer.start(Box::new(move |draw, total_elapsed, _elapsed| {
         let model = Matrix4::from_euler_angles(
             PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
             total_elapsed * 2.0 * PI / 5.0,
             0.0,
         ).append_translation(&Vector3::new(0.0, 0.0, -2.0));
         let model_ref = model.as_ref();
-        let params = DrawParameters {
-            depth: Depth {
-                test: DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            backface_culling: BackfaceCullingMode::CullClockwise,
-            ..Default::default()
-        };
-        // target.draw(
-        //     &vertex_buffer,
-        //     &index_buffer,
-        //     &renderer.program,
-        //     &uniform! {
-        //         matrix: *model_ref,
-        //         perspective: *perspective_ref,
-        //         tex: &texture,
-        //     },
-        //     &params,
-        // ).unwrap();
+        (&vertex_buffer, &index_buffer, model_ref, &texture)
     }));
 }
