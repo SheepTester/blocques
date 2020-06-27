@@ -41,17 +41,19 @@ impl Renderer {
         }
     }
 
-    pub fn start(&self, draw: Box<dyn Fn(&mut Frame, &[[f32; 4]; 4], f32, f32)>) {
+    pub fn start(self, draw: Box<dyn Fn(&mut Frame, &[[f32; 4]; 4], f32, f32)>) {
         let start = Instant::now();
         let mut last_time = start;
-        self.event_loop.run(move |ev, _, control_flow| {
+        let display = self.display;
+        let event_loop = self.event_loop;
+        event_loop.run(move |ev, _, control_flow| {
             let now = Instant::now();
             let next_frame_time = now + Duration::from_nanos(16_666_667);
             let total_elapsed = now.duration_since(start).as_secs_f32();
             let elapsed = now.duration_since(last_time).as_secs_f32();
             last_time = now;
 
-            let mut target = self.display.draw();
+            let mut target = display.draw();
             let (width, height) = target.get_dimensions();
             let perspective = Matrix4::new_perspective(
                 width as f32 / height as f32,

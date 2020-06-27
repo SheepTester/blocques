@@ -54,16 +54,16 @@ pub fn main() {
             backface_culling: BackfaceCullingMode::CullClockwise,
             ..Default::default()
         };
-        target.draw(
-            &vertex_buffer,
-            &index_buffer,
-            &renderer.program,
-            &uniform! {
-                matrix: *model_ref,
-                perspective: *perspective_ref,
-                tex: &texture,
-            },
-            &params,
-        ).unwrap();
+        // target.draw(
+        //     &vertex_buffer,
+        //     &index_buffer,
+        //     &renderer.program,
+        //     &uniform! {
+        //         matrix: *model_ref,
+        //         perspective: *perspective_ref,
+        //         tex: &texture,
+        //     },
+        //     &params,
+        // ).unwrap();
     }));
 }
