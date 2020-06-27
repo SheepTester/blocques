@@ -1,26 +1,21 @@
+use super::utils::Vertex;
 use glium::{
-    Display,
-    Program,
-    Frame,
+    draw_parameters::{BackfaceCullingMode, DepthTest},
     glutin::{
-        event_loop::{EventLoop, ControlFlow},
+        event::{Event, WindowEvent},
+        event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
         ContextBuilder,
-        event::{WindowEvent, Event},
     },
-    Surface,
-    VertexBuffer,
-    IndexBuffer,
-    texture::Texture2d,
     index::PrimitiveType,
-    DrawParameters,
-    draw_parameters::{DepthTest, BackfaceCullingMode},
-    Depth,
-    uniform,
+    texture::Texture2d,
+    uniform, Depth, Display, DrawParameters, Frame, IndexBuffer, Program, Surface, VertexBuffer,
 };
-use std::{time::{Instant, Duration}, f32::consts::PI};
 use nalgebra::Matrix4;
-use super::utils::Vertex;
+use std::{
+    f32::consts::PI,
+    time::{Duration, Instant},
+};
 
 pub struct RenderValues {
     pub vertex_buffer: Option<VertexBuffer<Vertex>>,
@@ -55,11 +50,14 @@ impl Renderer {
         let program = Program::from_source(
             &display,
             String::from_utf8_lossy(include_bytes!("./rendering/shader.vert"))
-                .into_owned().as_str(),
+                .into_owned()
+                .as_str(),
             String::from_utf8_lossy(include_bytes!("./rendering/shader.frag"))
-                .into_owned().as_str(),
+                .into_owned()
+                .as_str(),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         Renderer {
             event_loop: event_loop,
             display: display,
@@ -94,39 +92,50 @@ impl Renderer {
 
             let mut target = display.draw();
             let (width, height) = target.get_dimensions();
-            let perspective = Matrix4::new_perspective(
-                width as f32 / height as f32,
-                PI / 3.0,
-                0.1,
-                1024.0,
-            );
+            let perspective =
+                Matrix4::new_perspective(width as f32 / height as f32, PI / 3.0, 0.1, 1024.0);
 
             let perspective_ref = perspective.as_ref();
             target.clear_color_and_depth((0.0, 0.5, 1.0, 1.0), 1.0);
 
-            let dynamic_values = draw(
-                total_elapsed,
-                elapsed,
-            );
+            let dynamic_values = draw(total_elapsed, elapsed);
             // Panic if value not given in static and dynamic values
-            let vertex_buffer = static_values.vertex_buffer.as_ref().or_else(|| dynamic_values.vertex_buffer.as_ref()).unwrap();
-            let index_buffer = static_values.index_buffer.as_ref().or_else(|| dynamic_values.index_buffer.as_ref()).unwrap();
-            let model = static_values.model.as_ref().or_else(|| dynamic_values.model.as_ref()).unwrap();
-            let texture = static_values.texture.as_ref().or_else(|| dynamic_values.texture.as_ref()).unwrap();
+            let vertex_buffer = static_values
+                .vertex_buffer
+                .as_ref()
+                .or_else(|| dynamic_values.vertex_buffer.as_ref())
+                .unwrap();
+            let index_buffer = static_values
+                .index_buffer
+                .as_ref()
+                .or_else(|| dynamic_values.index_buffer.as_ref())
+                .unwrap();
+            let model = static_values
+                .model
+                .as_ref()
+                .or_else(|| dynamic_values.model.as_ref())
+                .unwrap();
+            let texture = static_values
+                .texture
+                .as_ref()
+                .or_else(|| dynamic_values.texture.as_ref())
+                .unwrap();
 
             let model_ref = model.as_ref();
 
-            target.draw(
-                vertex_buffer,
-                index_buffer,
-                &program,
-                &uniform! {
-                    matrix: *model_ref,
-                    perspective: *perspective_ref,
-                    tex: texture,
-                },
-                &params,
-            ).unwrap();
+            target
+                .draw(
+                    vertex_buffer,
+                    index_buffer,
+                    &program,
+                    &uniform! {
+                        matrix: *model_ref,
+                        perspective: *perspective_ref,
+                        tex: texture,
+                    },
+                    &params,
+                )
+                .unwrap();
             target.finish().unwrap();
 
             *control_flow = ControlFlow::WaitUntil(next_frame_time);

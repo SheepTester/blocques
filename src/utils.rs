@@ -10,10 +10,9 @@ pub struct Vertex {
 implement_vertex!(Vertex, position, tex_coords);
 
 pub fn load_image<'a>(bytes: &[u8]) -> RawImage2d<'a, u8> {
-    let image = image::load(
-        Cursor::new(bytes),
-        ImageFormat::Png,
-    ).unwrap().to_rgba();
+    let image = image::load(Cursor::new(bytes), ImageFormat::Png)
+        .unwrap()
+        .to_rgba();
     let image_dimensions = image.dimensions();
     RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions)
 }
