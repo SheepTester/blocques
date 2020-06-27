@@ -50,7 +50,8 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, draw: Box<dyn Fn(f32, f32) -> (&VertexBuffer<Vertex>, &IndexBuffer<u16>, &[[f32; 4]; 4], &Texture2d)>) {
+    // &'a () is needed because lifetime must be used in input for some reason
+    pub fn start(self, draw: Box<dyn for<'a> Fn(f32, f32, &'a ()) -> (&'a VertexBuffer<Vertex>, &'a IndexBuffer<u16>, Matrix4<f32>, &'a Texture2d)>) {
         let display = self.display;
         let event_loop = self.event_loop;
         let program = self.program;
@@ -67,6 +68,8 @@ impl Renderer {
 
         let start = Instant::now();
         let mut last_time = start;
+
+        let thing = ();
 
         event_loop.run(move |ev, _, control_flow| {
             let now = Instant::now();
@@ -85,10 +88,12 @@ impl Renderer {
             );
             let perspective_ref = perspective.as_ref();
             target.clear_color_and_depth((0.0, 0.5, 1.0, 1.0), 1.0);
-            let (vertex_buffer, index_buffer, model_ref, texture) = draw(
+            let (vertex_buffer, index_buffer, model, texture) = draw(
                 total_elapsed,
                 elapsed,
+                &thing,
             );
+            let model_ref = model.as_ref();
             target.draw(
                 vertex_buffer,
                 index_buffer,
