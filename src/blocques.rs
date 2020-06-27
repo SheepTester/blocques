@@ -1,5 +1,5 @@
 use super::utils::{self, Vertex};
-use super::rendering;
+use super::rendering::Renderer;
 use glium::{
     texture::Texture2d,
     VertexBuffer,
@@ -10,15 +10,16 @@ use glium::{
     Depth,
     uniform,
     Surface,
+    Frame,
 };
 use nalgebra::{Matrix4, Vector3};
 use std::f32::consts::PI;
 
 pub fn main() {
-    let (event_loop, display, program) = rendering::init();
+    let renderer = Renderer::new();
 
     let image = utils::load_image(include_bytes!("./assets/blocques.png"));
-    let texture = Texture2d::new(&display, image).unwrap();
+    let texture = Texture2d::new(&renderer.display, image).unwrap();
 
     let vertices = vec![
         Vertex { position: [0.5, 0.5, 0.0], tex_coords: [1.0, 1.0] },
@@ -26,33 +27,24 @@ pub fn main() {
         Vertex { position: [-0.5, -0.5, 0.5], tex_coords: [0.0, 0.0] },
         Vertex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 1.0] },
     ];
-    let vertex_buffer = VertexBuffer::new(&display, &vertices).unwrap();
+    let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();
     let indices: Vec<u16> = vec![
         0, 1, 3,
         1, 2, 3,
     ];
     let index_buffer = IndexBuffer::new(
-        &display,
+        &renderer.display,
         PrimitiveType::TrianglesList,
         &indices
     ).unwrap();
 
-    rendering::start(event_loop, Box::new(move |total_elapsed, _elapsed| {
-        let mut target = display.draw();
-        let (width, height) = target.get_dimensions();
+    renderer.start(Box::new(move |target, perspective_ref, total_elapsed, _elapsed| {
         let model = Matrix4::from_euler_angles(
             PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
             total_elapsed * 2.0 * PI / 5.0,
             0.0,
         ).append_translation(&Vector3::new(0.0, 0.0, -2.0));
         let model_ref = model.as_ref();
-        let perspective = Matrix4::new_perspective(
-            width as f32 / height as f32,
-            PI / 3.0,
-            0.1,
-            1024.0,
-        );
-        let perspective_ref = perspective.as_ref();
         let params = DrawParameters {
             depth: Depth {
                 test: DepthTest::IfLess,
@@ -62,11 +54,10 @@ pub fn main() {
             backface_culling: BackfaceCullingMode::CullClockwise,
             ..Default::default()
         };
-        target.clear_color_and_depth((0.0, 0.5, 1.0, 1.0), 1.0);
         target.draw(
             &vertex_buffer,
             &index_buffer,
-            &program,
+            &renderer.program,
             &uniform! {
                 matrix: *model_ref,
                 perspective: *perspective_ref,
@@ -74,6 +65,5 @@ pub fn main() {
             },
             &params,
         ).unwrap();
-        target.finish().unwrap();
     }));
 }
