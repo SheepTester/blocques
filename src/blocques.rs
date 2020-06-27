@@ -1,10 +1,9 @@
 use super::rendering::{RenderValues, Renderer};
 use super::utils::{self, Vertex};
 use glium::{
-    draw_parameters::{BackfaceCullingMode, DepthTest},
     index::PrimitiveType,
     texture::Texture2d,
-    uniform, Depth, DrawParameters, Frame, IndexBuffer, Surface, VertexBuffer,
+    IndexBuffer, VertexBuffer,
 };
 use nalgebra::{Matrix4, Vector3};
 use std::f32::consts::PI;
@@ -55,6 +54,10 @@ pub fn main() {
             vertex_buffer: Some(vertex_buffer),
             index_buffer: Some(index_buffer),
             texture: Some(texture),
+            background_colour: Some((0.005, 0.0, 0.01, 1.0)),
+            fov: Some(PI / 3.0),
+            near: Some(0.1),
+            far: Some(1024.0),
             ..RenderValues::default()
         },
     );

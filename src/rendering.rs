@@ -7,21 +7,21 @@ use glium::{
         window::WindowBuilder,
         ContextBuilder,
     },
-    index::PrimitiveType,
     texture::Texture2d,
-    uniform, Depth, Display, DrawParameters, Frame, IndexBuffer, Program, Surface, VertexBuffer,
+    uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer,
 };
 use nalgebra::Matrix4;
-use std::{
-    f32::consts::PI,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 pub struct RenderValues {
     pub vertex_buffer: Option<VertexBuffer<Vertex>>,
     pub index_buffer: Option<IndexBuffer<u16>>,
     pub model: Option<Matrix4<f32>>,
     pub texture: Option<Texture2d>,
+    pub background_colour: Option<(f32, f32, f32, f32)>,
+    pub fov: Option<f32>,
+    pub near: Option<f32>,
+    pub far: Option<f32>,
 }
 
 impl Default for RenderValues {
@@ -31,6 +31,10 @@ impl Default for RenderValues {
             index_buffer: None,
             model: None,
             texture: None,
+            background_colour: None,
+            fov: None,
+            near: None,
+            far: None,
         }
     }
 }
@@ -85,18 +89,11 @@ impl Renderer {
 
         event_loop.run(move |ev, _, control_flow| {
             let now = Instant::now();
-            let next_frame_time = now + Duration::from_nanos(16_666_667);
             let total_elapsed = now.duration_since(start).as_secs_f32();
             let elapsed = now.duration_since(last_time).as_secs_f32();
             last_time = now;
 
             let mut target = display.draw();
-            let (width, height) = target.get_dimensions();
-            let perspective =
-                Matrix4::new_perspective(width as f32 / height as f32, PI / 3.0, 0.1, 1024.0);
-
-            let perspective_ref = perspective.as_ref();
-            target.clear_color_and_depth((0.0, 0.5, 1.0, 1.0), 1.0);
 
             let dynamic_values = draw(total_elapsed, elapsed);
             // Panic if value not given in static and dynamic values
@@ -120,9 +117,31 @@ impl Renderer {
                 .as_ref()
                 .or_else(|| dynamic_values.texture.as_ref())
                 .unwrap();
+            let background_colour = static_values
+                .background_colour
+                .or(dynamic_values.background_colour)
+                .unwrap();
+            let fov = static_values
+                .fov
+                .or(dynamic_values.fov)
+                .unwrap();
+            let near = static_values
+                .near
+                .or(dynamic_values.near)
+                .unwrap();
+            let far = static_values
+                .far
+                .or(dynamic_values.far)
+                .unwrap();
+
+            let (width, height) = target.get_dimensions();
+            let perspective =
+                Matrix4::new_perspective(width as f32 / height as f32, fov, near, far);
+            let perspective_ref = perspective.as_ref();
 
             let model_ref = model.as_ref();
 
+            target.clear_color_and_depth(background_colour, 1.0);
             target
                 .draw(
                     vertex_buffer,
@@ -138,7 +157,6 @@ impl Renderer {
                 .unwrap();
             target.finish().unwrap();
 
-            *control_flow = ControlFlow::WaitUntil(next_frame_time);
             if let Event::WindowEvent { event, .. } = ev {
                 if event == WindowEvent::CloseRequested {
                     *control_flow = ControlFlow::Exit;
