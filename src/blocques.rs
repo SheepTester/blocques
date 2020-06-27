@@ -1,10 +1,6 @@
 use super::rendering::{RenderValues, Renderer};
 use super::utils::{self, Vertex};
-use glium::{
-    index::PrimitiveType,
-    texture::Texture2d,
-    IndexBuffer, VertexBuffer,
-};
+use glium::{index::PrimitiveType, texture::Texture2d, IndexBuffer, VertexBuffer};
 use nalgebra::{Matrix4, Vector3};
 use std::f32::consts::PI;
 

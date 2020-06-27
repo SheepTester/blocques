@@ -11,7 +11,7 @@ use glium::{
     uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer,
 };
 use nalgebra::Matrix4;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 pub struct RenderValues {
     pub vertex_buffer: Option<VertexBuffer<Vertex>>,
@@ -121,18 +121,9 @@ impl Renderer {
                 .background_colour
                 .or(dynamic_values.background_colour)
                 .unwrap();
-            let fov = static_values
-                .fov
-                .or(dynamic_values.fov)
-                .unwrap();
-            let near = static_values
-                .near
-                .or(dynamic_values.near)
-                .unwrap();
-            let far = static_values
-                .far
-                .or(dynamic_values.far)
-                .unwrap();
+            let fov = static_values.fov.or(dynamic_values.fov).unwrap();
+            let near = static_values.near.or(dynamic_values.near).unwrap();
+            let far = static_values.far.or(dynamic_values.far).unwrap();
 
             let (width, height) = target.get_dimensions();
             let perspective =
