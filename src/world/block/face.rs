@@ -17,6 +17,15 @@ pub enum Face {
     ZPos,
 }
 
+pub const FACES: [Face; 6] = [
+    XNeg,
+    XPos,
+    YNeg,
+    YPos,
+    ZNeg,
+    ZPos,
+];
+
 // Size of face
 const FACE: f32 = 1.0;
 
