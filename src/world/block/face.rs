@@ -17,66 +17,68 @@ pub enum Face {
     ZPos,
 }
 
+impl Face {
+    // Given the lower coordinates (ie rounded down)
+    pub fn vertices(&self, (x, y, z): (f32, f32, f32), texture_info: &SubTextureInfo) -> Vec<Vertex> {
+        // Here lies code that I write once and will never be able to read again
+        // Nonetheless, a reminder that -Z is in the forwards direction of the camera
+        vec![
+            Vertex {
+                position: match self {
+                    Face::XNeg => [x, y + FACE, z + FACE],
+                    Face::XPos => [x + FACE, y + FACE, z],
+                    Face::YNeg => [x, y, z],
+                    Face::YNeg => [x + FACE, y + FACE, z],
+                    Face::ZNeg => [x + FACE, y + FACE, z],
+                    Face::ZPos => [x, y + FACE, z + FACE],
+                },
+                tex_coords: [texture_info.x + texture_info.size, texture_info.y + texture_info.size],
+            },
+            Vertex {
+                position: match self {
+                    Face::XNeg => [x, y, z + FACE],
+                    Face::XPos => [x + FACE, y, z],
+                    Face::YNeg => [x, y, z + FACE],
+                    Face::YNeg => [x + FACE, y + FACE, z + FACE],
+                    Face::ZNeg => [x + FACE, y, z],
+                    Face::ZPos => [x, y, z + FACE],
+                },
+                tex_coords: [texture_info.x + texture_info.size, texture_info.y],
+            },
+            Vertex {
+                position: match self {
+                    Face::XNeg => [x, y, z],
+                    Face::XPos => [x + FACE, y, z + FACE],
+                    Face::YNeg => [x + FACE, y, z + FACE],
+                    Face::YNeg => [x, y + FACE, z + FACE],
+                    Face::ZNeg => [x, y, z],
+                    Face::ZPos => [x + FACE, y, z + FACE],
+                },
+                tex_coords: [texture_info.x, texture_info.y],
+            },
+            Vertex {
+                position: match self {
+                    Face::XNeg => [x, y + FACE, z],
+                    Face::XPos => [x + FACE, y + FACE, z + FACE],
+                    Face::YNeg => [x + FACE, y, z],
+                    Face::YNeg => [x, y + FACE, z],
+                    Face::ZNeg => [x, y + FACE, z],
+                    Face::ZPos => [x + FACE, y + FACE, z + FACE],
+                },
+                tex_coords: [texture_info.x, texture_info.y + texture_info.size],
+            },
+        ]
+    }
+}
+
 pub const FACES: [Face; 6] = [
-    XNeg,
-    XPos,
-    YNeg,
-    YPos,
-    ZNeg,
-    ZPos,
+    Face::XNeg,
+    Face::XPos,
+    Face::YNeg,
+    Face::YPos,
+    Face::ZNeg,
+    Face::ZPos,
 ];
 
 // Size of face
 const FACE: f32 = 1.0;
-
-// Given the lower coordinates (ie rounded down)
-pub fn vertices(face: Face, (x, y, z): (f32, f32, f32), texture_info: SubTextureInfo) -> Vec<Vertex> {
-    // Here lies code that I write once and will never be able to read again
-    // Nonetheless, a reminder that -Z is in the forwards direction of the camera
-    vec![
-        Vertex {
-            position: match face {
-                XNeg => [x, y + FACE, z + FACE],
-                XPos => [x + FACE, y + FACE, z],
-                YNeg => [x, y, z],
-                YNeg => [x + FACE, y + FACE, z],
-                ZNeg => [x + FACE, y + FACE, z],
-                ZPos => [x, y + FACE, z + FACE],
-            },
-            tex_coords: [texture_info.x + texture_info.size, texture_info.y + texture_info.size],
-        },
-        Vertex {
-            position: match face {
-                XNeg => [x, y, z + FACE],
-                XPos => [x + FACE, y, z],
-                YNeg => [x, y, z + FACE],
-                YNeg => [x + FACE, y + FACE, z + FACE],
-                ZNeg => [x + FACE, y, z],
-                ZPos => [x, y, z + FACE],
-            },
-            tex_coords: [texture_info.x + texture_info.size, texture_info.y],
-        },
-        Vertex {
-            position: match face {
-                XNeg => [x, y, z],
-                XPos => [x + FACE, y, z + FACE],
-                YNeg => [x + FACE, y, z + FACE],
-                YNeg => [x, y + FACE, z + FACE],
-                ZNeg => [x, y, z],
-                ZPos => [x + FACE, y, z + FACE],
-            },
-            tex_coords: [texture_info.x, texture_info.y],
-        },
-        Vertex {
-            position: match face {
-                XNeg => [x, y + FACE, z],
-                XPos => [x + FACE, y + FACE, z + FACE],
-                YNeg => [x + FACE, y, z],
-                YNeg => [x, y + FACE, z],
-                ZNeg => [x, y + FACE, z],
-                ZPos => [x + FACE, y + FACE, z + FACE],
-            },
-            tex_coords: [texture_info.x, texture_info.y + texture_info.size],
-        },
-    ]
-}
