@@ -23,14 +23,16 @@ impl Block {
             Box::new(iter::empty::<Vertex>())
         } else {
             let float_coords = (x as f32, y as f32, z as f32);
-            Box::new(face::FACES.iter().filter_map(|face| {
-                // TODO: is_next_to_transp_block
-                if false {
-                    Some(face.vertices(float_coords, texture_info))
-                } else {
-                    None
+            Box::new(face::FACES.iter().filter_map(
+                |face| {
+                    // TODO: is_next_to_transp_block
+                    if false {
+                        Some(face.vertices(float_coords, texture_info))
+                    } else {
+                        None
+                    }
                 }
-            }))
+            ).flatten())
         }
     }
 }

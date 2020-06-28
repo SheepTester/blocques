@@ -9,6 +9,7 @@ pub struct Vertex {
 }
 implement_vertex!(Vertex, position, tex_coords);
 
+#[derive(Clone)]
 pub struct SubTextureInfo {
     pub x: f32,
     pub y: f32,
