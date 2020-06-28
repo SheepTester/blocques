@@ -9,6 +9,12 @@ pub struct Vertex {
 }
 implement_vertex!(Vertex, position, tex_coords);
 
+pub struct SubTextureInfo {
+    pub x: f32,
+    pub y: f32,
+    pub size: f32,
+}
+
 pub fn load_image<'a>(bytes: &[u8]) -> RawImage2d<'a, u8> {
     let image = image::load(Cursor::new(bytes), ImageFormat::Png)
         .unwrap()

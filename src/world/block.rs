@@ -1,3 +1,5 @@
+mod face;
+
 #[derive(Clone, Copy)]
 pub enum Block {
     Empty,
