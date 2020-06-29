@@ -60,11 +60,11 @@ impl Chunk {
     }
 
     pub fn generate_all_vertices<'a>(
-        &'a mut self,
+        &'a self,
         texture_info: &'a SubTextureInfo,
         adj_chunk_manager: AdjacentChunkManager<'a>,
-    ) {
-        self.vertices = map_chunk_array(&self.blocks, |pos, block| {
+    ) -> ChunkArray<Vec<Vertex>> {
+        map_chunk_array(&self.blocks, |pos, block| {
             block.get_vertices(
                 self.to_world_coords(pos),
                 pos,
@@ -72,5 +72,9 @@ impl Chunk {
                 &adj_chunk_manager,
             )
         })
+    }
+
+    pub fn update_generated_vertices(&mut self, generated: ChunkArray<Vec<Vertex>>) {
+        self.vertices = generated;
     }
 }

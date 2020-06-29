@@ -54,9 +54,16 @@ impl World {
         texture_info: &'a SubTextureInfo,
     ) {
         for chunk_coord in chunk_coords {
-            if let Some(chunk) = self.get_chunk_mut(chunk_coord) {
+            let generated = if let Some(chunk) = self.get_chunk(chunk_coord) {
                 let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk_coord);
-                chunk.generate_all_vertices(texture_info, adjacent_chunks);
+                Some(chunk.generate_all_vertices(texture_info, adjacent_chunks))
+            } else {
+                None
+            };
+            // Updating separately in order to not mix a mutable reference with an immutable
+            // reference
+            if let (Some(generated), Some(chunk)) = (generated, self.get_chunk_mut(chunk_coord)) {
+                chunk.update_generated_vertices(generated);
             }
         }
     }
