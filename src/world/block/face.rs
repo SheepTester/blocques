@@ -1,4 +1,4 @@
-use crate::utils::{Vertex, SubTextureInfo};
+use crate::utils::{SubTextureInfo, Vertex};
 
 // The face vertices should go clockwise:
 // 4 $    * 1
@@ -20,7 +20,11 @@ pub enum Face {
 
 impl Face {
     // Given the lower coordinates (ie rounded down)
-    pub fn vertices(&self, (x, y, z): (f32, f32, f32), texture_info: &SubTextureInfo) -> Vec<Vertex> {
+    pub fn vertices(
+        &self,
+        (x, y, z): (f32, f32, f32),
+        texture_info: &SubTextureInfo,
+    ) -> Vec<Vertex> {
         // Here lies code that I write once and will never be able to read again
         // Nonetheless, a reminder that -Z is in the forwards direction of the camera
         vec![
@@ -33,7 +37,10 @@ impl Face {
                     Face::ZNeg => [x + FACE, y + FACE, z],
                     Face::ZPos => [x, y + FACE, z + FACE],
                 },
-                tex_coords: [texture_info.x + texture_info.size, texture_info.y + texture_info.size],
+                tex_coords: [
+                    texture_info.x + texture_info.size,
+                    texture_info.y + texture_info.size,
+                ],
             },
             Vertex {
                 position: match self {

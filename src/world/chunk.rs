@@ -1,8 +1,8 @@
-use super::block::{Block, face::Face};
+use super::block::{face::Face, Block};
+use super::{World, WorldCoord, WorldPos};
 use crate::utils::{SubTextureInfo, Vertex};
-use super::{World, WorldPos, WorldCoord};
-use std::iter::Iterator;
 use num_traits::PrimInt;
+use std::iter::Iterator;
 
 pub type ChunkPos = isize;
 pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
@@ -10,7 +10,10 @@ pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
 pub type BlockPos = u8;
 pub type BlockCoord = (BlockPos, BlockPos, BlockPos);
 
-pub fn apply_face<I>((x, y, z): (I, I, I), face: Face) -> (I, I, I) where I: PrimInt {
+pub fn apply_face<I>((x, y, z): (I, I, I), face: Face) -> (I, I, I)
+where
+    I: PrimInt,
+{
     match face {
         Face::XNeg => (x - I::one(), y, z),
         Face::XPos => (x + I::one(), y, z),
@@ -37,13 +40,14 @@ impl Chunk {
     }
 
     fn iter_blocks(&self) -> impl Iterator<Item = (BlockCoord, &Block)> + '_ {
-        self.blocks.iter()
-            .enumerate()
-            .flat_map(move |(x, slice)| slice.iter()
-                .enumerate()
-                .flat_map(move |(y, column)| column.iter()
+        self.blocks.iter().enumerate().flat_map(move |(x, slice)| {
+            slice.iter().enumerate().flat_map(move |(y, column)| {
+                column
+                    .iter()
                     .enumerate()
-                    .map(move |(z, block)| ((x as BlockPos, y as BlockPos, z as BlockPos), block))))
+                    .map(move |(z, block)| ((x as BlockPos, y as BlockPos, z as BlockPos), block))
+            })
+        })
     }
 
     fn to_world_coords(&self, (bx, by, bz): BlockCoord) -> WorldCoord {
@@ -60,9 +64,19 @@ impl Chunk {
         self.blocks[x as usize][y as usize][z as usize]
     }
 
-    pub fn get_vertices<'a>(&'a self, texture_info: &'a SubTextureInfo, adj_chunk_manager: AdjacentChunkManager<'a>) -> impl Iterator<Item = Vertex> + 'a {
-        self.iter_blocks()
-            .flat_map(move |(pos, block)| block.get_vertices(self.to_world_coords(pos), pos, texture_info, &adj_chunk_manager))
+    pub fn get_vertices<'a>(
+        &'a self,
+        texture_info: &'a SubTextureInfo,
+        adj_chunk_manager: AdjacentChunkManager<'a>,
+    ) -> impl Iterator<Item = Vertex> + 'a {
+        self.iter_blocks().flat_map(move |(pos, block)| {
+            block.get_vertices(
+                self.to_world_coords(pos),
+                pos,
+                texture_info,
+                &adj_chunk_manager,
+            )
+        })
     }
 }
 
