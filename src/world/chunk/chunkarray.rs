@@ -36,7 +36,7 @@ pub fn iter_flat<T>(array: &ChunkArray<T>) -> impl Iterator<Item = &T> + '_ {
         .flat_map(|slice| slice.iter().flat_map(|column| column.iter()))
 }
 
-pub fn iter_flat_map<T>(array: &ChunkArray<T>) -> impl Iterator<Item = (BlockCoord, &T)> + '_ {
+fn _iter_flat_map<T>(array: &ChunkArray<T>) -> impl Iterator<Item = (BlockCoord, &T)> + '_ {
     array.iter().enumerate().flat_map(move |(x, slice)| {
         slice.iter().enumerate().flat_map(move |(y, column)| {
             column

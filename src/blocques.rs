@@ -1,5 +1,8 @@
-use super::rendering::{RenderValues, Renderer};
-use super::utils::{self, Vertex};
+use crate::{
+    rendering::{RenderValues, Renderer},
+    utils::{self, SubTextureInfo},
+    world::{World, Block},
+};
 use glium::{index::PrimitiveType, texture::Texture2d, IndexBuffer, VertexBuffer};
 use nalgebra::{Matrix4, Vector3};
 use std::f32::consts::PI;
@@ -9,25 +12,22 @@ pub fn main() {
 
     let image = utils::load_image(include_bytes!("./assets/blocques.png"));
     let texture = Texture2d::new(&renderer.display, image).unwrap();
+    let texture_info = SubTextureInfo {
+        x: 0.0,
+        y: 0.0,
+        size: 1.0,
+    };
 
-    let vertices = vec![
-        Vertex {
-            position: [0.5, 0.5, 0.0],
-            tex_coords: [1.0, 1.0],
-        },
-        Vertex {
-            position: [0.5, -0.5, 0.0],
-            tex_coords: [1.0, 0.0],
-        },
-        Vertex {
-            position: [-0.5, -0.5, 0.5],
-            tex_coords: [0.0, 0.0],
-        },
-        Vertex {
-            position: [-0.5, 0.5, 0.0],
-            tex_coords: [0.0, 1.0],
-        },
-    ];
+    let mut world = World::new();
+    world.generate_chunk((0, 0, 0));
+    world.set_block((5, 5, 5), if let Block::Empty = world.get_block((5, 5, 5)) {
+        Block::Filled
+    } else {
+        Block::Empty
+    });
+    world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
+
+    let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
     let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();
     let indices: Vec<u16> = vec![0, 1, 3, 1, 2, 3];
     let index_buffer =

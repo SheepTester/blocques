@@ -6,7 +6,6 @@ use super::{WorldCoord, WorldPos};
 use crate::utils::{SubTextureInfo, Vertex};
 pub use adjacent_manager::AdjacentChunkManager;
 pub use chunkarray::{iter_flat, make_chunk_array, map_chunk_array, ChunkArray, CHUNK_SIZE};
-use std::iter::Iterator;
 
 pub type ChunkPos = isize;
 pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
@@ -27,17 +26,6 @@ impl Chunk {
             vertices: make_chunk_array(),
             location,
         }
-    }
-
-    fn iter_blocks(&self) -> impl Iterator<Item = (BlockCoord, &Block)> + '_ {
-        self.blocks.iter().enumerate().flat_map(move |(x, slice)| {
-            slice.iter().enumerate().flat_map(move |(y, column)| {
-                column
-                    .iter()
-                    .enumerate()
-                    .map(move |(z, block)| ((x as BlockPos, y as BlockPos, z as BlockPos), block))
-            })
-        })
     }
 
     fn to_world_coords(&self, (bx, by, bz): BlockCoord) -> WorldCoord {

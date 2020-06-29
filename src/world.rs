@@ -2,7 +2,7 @@ mod block;
 mod chunk;
 
 use crate::utils::{SubTextureInfo, Vertex};
-use block::Block;
+pub use block::Block;
 use chunk::{iter_flat, AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
 use std::collections::HashMap;
 
@@ -28,10 +28,14 @@ impl World {
         self.chunks.get_mut(&coord)
     }
 
+    pub fn generate_chunk(&mut self, coord: ChunkCoord) {
+        let chunk = Chunk::new(coord);
+        self.chunks.insert(coord, chunk);
+    }
+
     fn edit_chunk(&mut self, coord: ChunkCoord) -> &mut Chunk {
         if let None = self.chunks.get(&coord) {
-            let chunk = Chunk::new(coord);
-            self.chunks.insert(coord, chunk);
+            self.generate_chunk(coord);
         }
         self.chunks.get_mut(&coord).unwrap()
     }
