@@ -2,8 +2,9 @@ mod block;
 mod chunk;
 
 use block::Block;
-use chunk::{Chunk, ChunkCoord, CHUNK_SIZE, BlockPos};
+use chunk::{Chunk, ChunkCoord, CHUNK_SIZE, BlockPos, AdjacentChunkManager};
 use std::collections::HashMap;
+use crate::utils::{SubTextureInfo, Vertex};
 
 type WorldPos = isize;
 type WorldCoord = (WorldPos, WorldPos, WorldPos);
@@ -29,5 +30,10 @@ impl World {
             Some(chunk) => chunk.get_local_block(((x % chunk_size) as BlockPos, (y % chunk_size) as BlockPos, (z % chunk_size) as BlockPos)),
             None => Block::default(),
         }
+    }
+
+    pub fn generate_vertices<'a>(&'a self, chunk: &'a Chunk, texture_info: &'a SubTextureInfo) -> impl Iterator<Item = Vertex> + 'a {
+        let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk);
+        chunk.get_vertices(texture_info, adjacent_chunks)
     }
 }

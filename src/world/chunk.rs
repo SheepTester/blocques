@@ -1,7 +1,7 @@
-use super::block::{Block, face::{Face, FACES}};
-use super::super::utils::{SubTextureInfo, Vertex};
+use super::block::{Block, face::Face};
+use crate::utils::{SubTextureInfo, Vertex};
 use super::{World, WorldPos, WorldCoord};
-use std::{iter::Iterator, ops::{Add, Sub}};
+use std::iter::Iterator;
 use num_traits::PrimInt;
 
 pub type ChunkPos = isize;
@@ -29,7 +29,7 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    pub fn new(location: ChunkCoord, world: &World) -> Self {
+    pub fn new(location: ChunkCoord) -> Self {
         Chunk {
             blocks: [[[Block::default(); CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
             location: location,
@@ -60,13 +60,13 @@ impl Chunk {
         self.blocks[x as usize][y as usize][z as usize]
     }
 
-    pub fn get_vertices<'a>(&'a self, texture_info: &'a SubTextureInfo) -> impl Iterator<Item = Vertex> + 'a {
+    pub fn get_vertices<'a>(&'a self, texture_info: &'a SubTextureInfo, adj_chunk_manager: AdjacentChunkManager<'a>) -> impl Iterator<Item = Vertex> + 'a {
         self.iter_blocks()
-            .flat_map(move |(pos, block)| block.get_vertices(self.to_world_coords(pos), texture_info))
+            .flat_map(move |(pos, block)| block.get_vertices(self.to_world_coords(pos), pos, texture_info, &adj_chunk_manager))
     }
 }
 
-struct AdjacentChunkManager<'a> {
+pub struct AdjacentChunkManager<'a> {
     chunk: &'a Chunk,
     xneg_chunk: Option<&'a Chunk>,
     xpos_chunk: Option<&'a Chunk>,
@@ -89,7 +89,7 @@ impl<'a> AdjacentChunkManager<'a> {
         }
     }
 
-    fn get_face(&self, block_pos: BlockCoord, face: Face) -> Block {
+    pub fn get_face(&self, block_pos: BlockCoord, face: Face) -> Block {
         let chunk_size = CHUNK_SIZE as BlockPos;
         let (x, y, z) = block_pos;
         let (maybe_chunk, pos) = match face {

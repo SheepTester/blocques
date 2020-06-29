@@ -1,4 +1,4 @@
-use super::super::super::utils::{Vertex, SubTextureInfo};
+use crate::utils::{Vertex, SubTextureInfo};
 
 // The face vertices should go clockwise:
 // 4 $    * 1
@@ -8,6 +8,7 @@ use super::super::super::utils::{Vertex, SubTextureInfo};
 
 // [axis: X|Y|Z][dir: Neg|Pos]
 // The axis will remain unchained. It'll be axis when Neg and axis + FACE when Pos.
+#[derive(Clone, Copy)]
 pub enum Face {
     XNeg,
     XPos,
