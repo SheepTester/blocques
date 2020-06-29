@@ -24,7 +24,11 @@ impl World {
         self.chunks.get(&coord)
     }
 
-    fn get_chunk_mut(&mut self, coord: ChunkCoord) -> &mut Chunk {
+    fn get_chunk_mut(&mut self, coord: ChunkCoord) -> Option<&mut Chunk> {
+        self.chunks.get_mut(&coord)
+    }
+
+    fn edit_chunk(&mut self, coord: ChunkCoord) -> &mut Chunk {
         if let None = self.chunks.get(&coord) {
             let chunk = Chunk::new(coord);
             self.chunks.insert(coord, chunk);
@@ -44,15 +48,23 @@ impl World {
         }
     }
 
-    pub fn get_vertices_for_chunks<'a>(
-        &'a self,
+    pub fn generate_vertices_for_chunks<'a>(
+        &'a mut self,
         chunk_coords: Vec<ChunkCoord>,
         texture_info: &'a SubTextureInfo,
-    ) -> Vec<Vertex> {
+    ) {
+        for chunk_coord in chunk_coords {
+            if let Some(chunk) = self.get_chunk_mut(chunk_coord) {
+                let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk_coord);
+                chunk.generate_all_vertices(texture_info, adjacent_chunks);
+            }
+        }
+    }
+
+    pub fn get_vertices_for_chunks(&self, chunk_coords: Vec<ChunkCoord>) -> Vec<Vertex> {
         let mut vertices = Vec::new();
         for chunk_coord in chunk_coords {
             if let Some(chunk) = self.get_chunk(chunk_coord) {
-                let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk);
                 for face_vertices in iter_flat(&chunk.vertices) {
                     vertices.extend(face_vertices);
                 }
@@ -64,7 +76,7 @@ impl World {
     pub fn set_block(&mut self, (x, y, z): WorldCoord, block: Block) {
         let chunk_size = CHUNK_SIZE as WorldPos;
         let chunk_pos = (x / chunk_size, y / chunk_size, z / chunk_size);
-        let chunk = self.get_chunk_mut(chunk_pos);
+        let chunk = self.edit_chunk(chunk_pos);
         chunk.set_local_block(
             (
                 (x % chunk_size) as BlockPos,

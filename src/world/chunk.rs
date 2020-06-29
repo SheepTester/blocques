@@ -1,8 +1,8 @@
 mod adjacent_manager;
 mod chunkarray;
 
-use super::block::{face::Face, Block};
-use super::{World, WorldCoord, WorldPos};
+use super::block::Block;
+use super::{WorldCoord, WorldPos};
 use crate::utils::{SubTextureInfo, Vertex};
 pub use adjacent_manager::AdjacentChunkManager;
 pub use chunkarray::{iter_flat, make_chunk_array, map_chunk_array, ChunkArray, CHUNK_SIZE};

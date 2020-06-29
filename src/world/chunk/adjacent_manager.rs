@@ -4,7 +4,7 @@ use super::{
         World,
     },
     chunkarray::CHUNK_SIZE,
-    BlockCoord, BlockPos, Chunk,
+    BlockCoord, BlockPos, Chunk, ChunkCoord,
 };
 use num_traits::PrimInt;
 
@@ -23,7 +23,7 @@ where
 }
 
 pub struct AdjacentChunkManager<'a> {
-    chunk: &'a Chunk,
+    chunk: Option<&'a Chunk>,
     xneg_chunk: Option<&'a Chunk>,
     xpos_chunk: Option<&'a Chunk>,
     yneg_chunk: Option<&'a Chunk>,
@@ -33,15 +33,15 @@ pub struct AdjacentChunkManager<'a> {
 }
 
 impl<'a> AdjacentChunkManager<'a> {
-    pub fn from_world(world: &'a World, chunk: &'a Chunk) -> Self {
+    pub fn from_world(world: &'a World, location: ChunkCoord) -> Self {
         AdjacentChunkManager {
-            chunk,
-            xneg_chunk: world.get_chunk(apply_face(chunk.location, Face::XNeg)),
-            xpos_chunk: world.get_chunk(apply_face(chunk.location, Face::XPos)),
-            yneg_chunk: world.get_chunk(apply_face(chunk.location, Face::YNeg)),
-            ypos_chunk: world.get_chunk(apply_face(chunk.location, Face::YPos)),
-            zneg_chunk: world.get_chunk(apply_face(chunk.location, Face::ZNeg)),
-            zpos_chunk: world.get_chunk(apply_face(chunk.location, Face::ZPos)),
+            chunk: world.get_chunk(location),
+            xneg_chunk: world.get_chunk(apply_face(location, Face::XNeg)),
+            xpos_chunk: world.get_chunk(apply_face(location, Face::XPos)),
+            yneg_chunk: world.get_chunk(apply_face(location, Face::YNeg)),
+            ypos_chunk: world.get_chunk(apply_face(location, Face::YPos)),
+            zneg_chunk: world.get_chunk(apply_face(location, Face::ZNeg)),
+            zpos_chunk: world.get_chunk(apply_face(location, Face::ZPos)),
         }
     }
 
@@ -55,7 +55,7 @@ impl<'a> AdjacentChunkManager<'a> {
             Face::YPos if y == chunk_size - 1 => (self.ypos_chunk, (x, 0, z)),
             Face::ZNeg if z == 0 => (self.zneg_chunk, (x, y, chunk_size - 1)),
             Face::ZPos if z == chunk_size - 1 => (self.zpos_chunk, (x, y, 0)),
-            _ => (Some(self.chunk), apply_face(block_pos, face)),
+            _ => (self.chunk, apply_face(block_pos, face)),
         };
         match maybe_chunk {
             Some(chunk) => chunk.get_local_block(pos),
