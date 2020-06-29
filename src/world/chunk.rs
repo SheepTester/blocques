@@ -80,12 +80,12 @@ impl<'a> AdjacentChunkManager<'a> {
     pub fn from_world(world: &'a World, chunk: &'a Chunk) -> Self {
         AdjacentChunkManager {
             chunk: chunk,
-            xneg_chunk: world.get_chunk(&apply_face(chunk.location, Face::XNeg)),
-            xpos_chunk: world.get_chunk(&apply_face(chunk.location, Face::XPos)),
-            yneg_chunk: world.get_chunk(&apply_face(chunk.location, Face::YNeg)),
-            ypos_chunk: world.get_chunk(&apply_face(chunk.location, Face::YPos)),
-            zneg_chunk: world.get_chunk(&apply_face(chunk.location, Face::ZNeg)),
-            zpos_chunk: world.get_chunk(&apply_face(chunk.location, Face::ZPos)),
+            xneg_chunk: world.get_chunk(apply_face(chunk.location, Face::XNeg)),
+            xpos_chunk: world.get_chunk(apply_face(chunk.location, Face::XPos)),
+            yneg_chunk: world.get_chunk(apply_face(chunk.location, Face::YNeg)),
+            ypos_chunk: world.get_chunk(apply_face(chunk.location, Face::YPos)),
+            zneg_chunk: world.get_chunk(apply_face(chunk.location, Face::ZNeg)),
+            zpos_chunk: world.get_chunk(apply_face(chunk.location, Face::ZPos)),
         }
     }
 
