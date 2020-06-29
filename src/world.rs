@@ -4,7 +4,7 @@ mod chunk;
 use crate::utils::{SubTextureInfo, Vertex};
 use block::Block;
 use chunk::{AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
-use std::{collections::HashMap, iter};
+use std::collections::HashMap;
 
 type WorldPos = isize;
 type WorldCoord = (WorldPos, WorldPos, WorldPos);
@@ -22,6 +22,14 @@ impl World {
 
     fn get_chunk(&self, coord: ChunkCoord) -> Option<&Chunk> {
         self.chunks.get(&coord)
+    }
+
+    fn get_chunk_mut(&mut self, coord: ChunkCoord) -> &mut Chunk {
+        if let None = self.chunks.get(&coord) {
+            let chunk = Chunk::new(coord);
+            self.chunks.insert(coord, chunk);
+        }
+        self.chunks.get_mut(&coord).unwrap()
     }
 
     pub fn get_block(&self, (x, y, z): WorldCoord) -> Block {
@@ -46,5 +54,19 @@ impl World {
             let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk);
             target.extend(chunk.get_vertices(texture_info, adjacent_chunks));
         }
+    }
+
+    pub fn set_block(&mut self, (x, y, z): WorldCoord, block: Block) {
+        let chunk_size = CHUNK_SIZE as WorldPos;
+        let chunk_pos = (x / chunk_size, y / chunk_size, z / chunk_size);
+        let chunk = self.get_chunk_mut(chunk_pos);
+        chunk.set_local_block(
+            (
+                (x % chunk_size) as BlockPos,
+                (y % chunk_size) as BlockPos,
+                (z % chunk_size) as BlockPos,
+            ),
+            block,
+        );
     }
 }

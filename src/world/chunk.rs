@@ -64,6 +64,11 @@ impl Chunk {
         self.blocks[x as usize][y as usize][z as usize]
     }
 
+    pub fn set_local_block(&mut self, (x, y, z): BlockCoord, block: Block) {
+        self.blocks[x as usize][y as usize][z as usize] = block;
+        // TODO: Update vertices?
+    }
+
     pub fn get_vertices<'a>(
         &'a self,
         texture_info: &'a SubTextureInfo,
