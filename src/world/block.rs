@@ -1,4 +1,4 @@
-mod face;
+pub mod face;
 
 use super::super::utils::{Vertex, SubTextureInfo};
 use super::WorldCoord;

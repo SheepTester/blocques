@@ -89,6 +89,7 @@ dependencies = [
  "glium",
  "image",
  "nalgebra",
+ "num-traits",
 ]
 
 [[package]]
