@@ -3,7 +3,7 @@ mod chunk;
 
 use crate::utils::{SubTextureInfo, Vertex};
 use block::Block;
-use chunk::{AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
+use chunk::{iter_flat, AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
 use std::collections::HashMap;
 
 type WorldPos = isize;
@@ -44,16 +44,21 @@ impl World {
         }
     }
 
-    pub fn add_chunk_vertices<'a>(
+    pub fn get_vertices_for_chunks<'a>(
         &'a self,
-        target: &mut Vec<Vertex>,
-        chunk_coord: ChunkCoord,
+        chunk_coords: Vec<ChunkCoord>,
         texture_info: &'a SubTextureInfo,
-    ) {
-        if let Some(chunk) = self.get_chunk(chunk_coord) {
-            let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk);
-            target.extend(chunk.get_vertices(texture_info, adjacent_chunks));
+    ) -> Vec<Vertex> {
+        let mut vertices = Vec::new();
+        for chunk_coord in chunk_coords {
+            if let Some(chunk) = self.get_chunk(chunk_coord) {
+                let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk);
+                for face_vertices in iter_flat(&chunk.vertices) {
+                    vertices.extend(face_vertices);
+                }
+            }
         }
+        vertices
     }
 
     pub fn set_block(&mut self, (x, y, z): WorldCoord, block: Block) {
