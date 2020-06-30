@@ -18,17 +18,23 @@ pub fn main() {
         size: 1.0,
     };
 
+    println!("Ok.");
     let mut world = World::new();
+    println!("World created.");
     world.generate_chunk((0, 0, 0));
+    println!("Chunk generated.");
     world.set_block(
         (5, 5, 5),
         if let Block::Empty = world.get_block((5, 5, 5)) {
+            println!("Block get.");
             Block::Filled
         } else {
             Block::Empty
         },
     );
+    println!("Block set.");
     world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
+    println!("Vertices generated.");
 
     let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
     let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();

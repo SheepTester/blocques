@@ -13,6 +13,7 @@ pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
 pub type BlockPos = u8;
 pub type BlockCoord = (BlockPos, BlockPos, BlockPos);
 
+#[repr(C)]
 pub struct Chunk {
     blocks: ChunkArray<Block>,
     pub vertices: ChunkArray<Vec<Vertex>>,
