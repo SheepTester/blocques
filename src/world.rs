@@ -29,16 +29,8 @@ impl World {
     }
 
     pub fn generate_chunk(&mut self, coord: ChunkCoord) {
-        println!("Making chunk.");
         let chunk = Chunk::new(coord);
-        println!("Made chunk.");
-        println!("Block has size {}.", std::mem::size_of::<Block>());
-        println!("ChunkArray<bool> has size {}.", std::mem::size_of::<chunk::ChunkArray<bool>>());
-        println!("Vec<Vertex> has size {}.", std::mem::size_of::<Vec<Vertex>>());
-        println!("HashMap<BlockCoord, Vec<Vertex>> has size {}.", std::mem::size_of::<HashMap<chunk::BlockCoord, Vec<Vertex>>>());
-        println!("Chunk has size {}.", std::mem::size_of::<Chunk>());
         self.chunks.insert(coord, chunk);
-        println!("Chunk INSERTED.");
     }
 
     fn edit_chunk(&mut self, coord: ChunkCoord) -> &mut Chunk {
@@ -84,7 +76,7 @@ impl World {
         let mut vertices = Vec::new();
         for chunk_coord in chunk_coords {
             if let Some(chunk) = self.get_chunk(chunk_coord) {
-                for face_vertices in chunk.vertices.iter_flat() {
+                for face_vertices in chunk.vertices.values() {
                     vertices.extend(face_vertices);
                 }
             }

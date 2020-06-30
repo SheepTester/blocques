@@ -6,6 +6,7 @@ use super::{WorldCoord, WorldPos};
 use crate::utils::{SubTextureInfo, Vertex};
 pub use adjacent_manager::AdjacentChunkManager;
 pub use chunkarray::{ChunkArray, CHUNK_SIZE};
+use std::collections::HashMap;
 
 pub type ChunkPos = isize;
 pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
@@ -13,10 +14,9 @@ pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
 pub type BlockPos = u8;
 pub type BlockCoord = (BlockPos, BlockPos, BlockPos);
 
-#[repr(C)]
 pub struct Chunk {
     blocks: ChunkArray<Block>,
-    pub vertices: ChunkArray<Vec<Vertex>>,
+    pub vertices: HashMap<BlockCoord, Vec<Vertex>>,
     location: ChunkCoord,
 }
 
@@ -24,7 +24,7 @@ impl Chunk {
     pub fn new(location: ChunkCoord) -> Self {
         Chunk {
             blocks: ChunkArray::new(),
-            vertices: ChunkArray::new(),
+            vertices: HashMap::new(),
             location,
         }
     }
@@ -52,18 +52,20 @@ impl Chunk {
         &'a self,
         texture_info: &'a SubTextureInfo,
         adj_chunk_manager: AdjacentChunkManager<'a>,
-    ) -> ChunkArray<Vec<Vertex>> {
-        self.blocks.map(|pos, block| {
-            block.get_vertices(
+    ) -> HashMap<BlockCoord, Vec<Vertex>> {
+        let mut vertices = HashMap::new();
+        for (pos, block) in self.blocks.iter_flat_coords() {
+            vertices.insert(pos, block.get_vertices(
                 self.to_world_coords(pos),
                 pos,
                 texture_info,
                 &adj_chunk_manager,
-            )
-        })
+            ));
+        }
+        vertices
     }
 
-    pub fn update_generated_vertices(&mut self, generated: ChunkArray<Vec<Vertex>>) {
+    pub fn update_generated_vertices(&mut self, generated: HashMap<BlockCoord, Vec<Vertex>>) {
         self.vertices = generated;
     }
 }
