@@ -13,30 +13,20 @@ use glium::{
 use nalgebra::Matrix4;
 use std::time::Instant;
 
-pub struct RenderValues {
-    pub vertex_buffer: Option<VertexBuffer<Vertex>>,
-    pub index_buffer: Option<IndexBuffer<u16>>,
-    pub model: Option<Matrix4<f32>>,
-    pub texture: Option<Texture2d>,
-    pub background_colour: Option<(f32, f32, f32, f32)>,
-    pub fov: Option<f32>,
-    pub near: Option<f32>,
-    pub far: Option<f32>,
+pub struct RenderValues<'a> {
+    pub vertex_buffer: &'a VertexBuffer<Vertex>,
+    pub index_buffer: &'a IndexBuffer<u16>,
+    pub model: &'a Matrix4<f32>,
+    pub texture: &'a Texture2d,
+    pub background_colour: (f32, f32, f32, f32),
+    pub fov: f32,
+    pub near: f32,
+    pub far: f32,
 }
 
-impl Default for RenderValues {
-    fn default() -> Self {
-        Self {
-            vertex_buffer: None,
-            index_buffer: None,
-            model: None,
-            texture: None,
-            background_colour: None,
-            fov: None,
-            near: None,
-            far: None,
-        }
-    }
+pub trait RenderController {
+    fn draw(&mut self, total_elapsed: f32, elapsed: f32);
+    fn get_values(&self) -> RenderValues;
 }
 
 pub struct Renderer {
@@ -69,7 +59,7 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, draw: Box<dyn Fn(f32, f32) -> RenderValues>, static_values: RenderValues) {
+    pub fn start(self, mut controller: Box<dyn RenderController>) {
         let display = self.display;
         let event_loop = self.event_loop;
         let program = self.program;
@@ -109,35 +99,17 @@ impl Renderer {
 
             let mut target = display.draw();
 
-            let dynamic_values = draw(total_elapsed, elapsed);
-            // Panic if value not given in static and dynamic values
-            let vertex_buffer = static_values
-                .vertex_buffer
-                .as_ref()
-                .or_else(|| dynamic_values.vertex_buffer.as_ref())
-                .unwrap();
-            let index_buffer = static_values
-                .index_buffer
-                .as_ref()
-                .or_else(|| dynamic_values.index_buffer.as_ref())
-                .unwrap();
-            let model = static_values
-                .model
-                .as_ref()
-                .or_else(|| dynamic_values.model.as_ref())
-                .unwrap();
-            let texture = static_values
-                .texture
-                .as_ref()
-                .or_else(|| dynamic_values.texture.as_ref())
-                .unwrap();
-            let background_colour = static_values
-                .background_colour
-                .or(dynamic_values.background_colour)
-                .unwrap();
-            let fov = static_values.fov.or(dynamic_values.fov).unwrap();
-            let near = static_values.near.or(dynamic_values.near).unwrap();
-            let far = static_values.far.or(dynamic_values.far).unwrap();
+            controller.draw(total_elapsed, elapsed);
+            let RenderValues {
+                vertex_buffer,
+                index_buffer,
+                model,
+                texture,
+                background_colour,
+                fov,
+                near,
+                far,
+            } = controller.get_values();
 
             let (width, height) = target.get_dimensions();
             let perspective =

@@ -1,11 +1,45 @@
 use crate::{
-    rendering::{RenderValues, Renderer},
-    utils::{self, SubTextureInfo},
+    rendering::{RenderController, RenderValues, Renderer},
+    utils::{self, SubTextureInfo, Vertex},
     world::{Block, World},
 };
 use glium::{index::PrimitiveType, texture::Texture2d, IndexBuffer, VertexBuffer};
 use nalgebra::{Matrix4, Vector3};
 use std::f32::consts::PI;
+
+struct Blocques {
+    vertex_buffer: VertexBuffer<Vertex>,
+    index_buffer: IndexBuffer<u16>,
+    model: Matrix4<f32>,
+    texture: Texture2d,
+    background_colour: (f32, f32, f32, f32),
+    fov: f32,
+    near: f32,
+    far: f32,
+}
+
+impl RenderController for Blocques {
+    fn draw(&mut self, total_elapsed: f32, _elapsed: f32) {
+        self.model = Matrix4::from_euler_angles(
+            PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
+            total_elapsed * 2.0 * PI / 5.0,
+            0.0,
+        )
+        .append_translation(&Vector3::new(0.0, 0.0, -2.0));
+    }
+    fn get_values(&self) -> RenderValues {
+        RenderValues {
+            vertex_buffer: &self.vertex_buffer,
+            index_buffer: &self.index_buffer,
+            model: &self.model,
+            texture: &self.texture,
+            background_colour: self.background_colour,
+            fov: self.fov,
+            near: self.near,
+            far: self.far,
+        }
+    }
+}
 
 pub fn main() {
     let renderer = Renderer::new();
@@ -36,28 +70,15 @@ pub fn main() {
     let index_buffer =
         IndexBuffer::new(&renderer.display, PrimitiveType::TrianglesList, &indices).unwrap();
 
-    renderer.start(
-        Box::new(move |total_elapsed, _elapsed| {
-            let model = Matrix4::from_euler_angles(
-                PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
-                total_elapsed * 2.0 * PI / 5.0,
-                0.0,
-            )
-            .append_translation(&Vector3::new(0.0, 0.0, -2.0));
-            RenderValues {
-                model: Some(model),
-                ..RenderValues::default()
-            }
-        }),
-        RenderValues {
-            vertex_buffer: Some(vertex_buffer),
-            index_buffer: Some(index_buffer),
-            texture: Some(texture),
-            background_colour: Some((0.005, 0.0, 0.01, 1.0)),
-            fov: Some(PI / 3.0),
-            near: Some(0.1),
-            far: Some(1024.0),
-            ..RenderValues::default()
-        },
-    );
+    let controller = Blocques {
+        vertex_buffer,
+        index_buffer,
+        model: Matrix4::default(),
+        texture,
+        background_colour: (0.005, 0.0, 0.01, 1.0),
+        fov: PI / 3.0,
+        near: 0.1,
+        far: 1024.0,
+    };
+    renderer.start(Box::new(controller));
 }
