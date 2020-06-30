@@ -63,9 +63,9 @@ impl Renderer {
         )
         .unwrap();
         Renderer {
-            event_loop: event_loop,
-            display: display,
-            program: program,
+            event_loop,
+            display,
+            program,
         }
     }
 
@@ -88,6 +88,20 @@ impl Renderer {
         let mut last_time = start;
 
         event_loop.run(move |ev, _, control_flow| {
+            match ev {
+                Event::WindowEvent { event, .. } => match event {
+                    WindowEvent::KeyboardInput { input, .. } => {
+                        println!("Keyboard input: {:?}", input);
+                    }
+                    WindowEvent::CloseRequested => {
+                        *control_flow = ControlFlow::Exit;
+                        return;
+                    }
+                    _ => {}
+                },
+                _ => {}
+            };
+
             let now = Instant::now();
             let total_elapsed = now.duration_since(start).as_secs_f32();
             let elapsed = now.duration_since(last_time).as_secs_f32();
@@ -147,12 +161,6 @@ impl Renderer {
                 )
                 .unwrap();
             target.finish().unwrap();
-
-            if let Event::WindowEvent { event, .. } = ev {
-                if event == WindowEvent::CloseRequested {
-                    *control_flow = ControlFlow::Exit;
-                }
-            }
         });
     }
 }
