@@ -1,7 +1,7 @@
 use crate::{
     rendering::{RenderValues, Renderer},
     utils::{self, SubTextureInfo},
-    world::{World, Block},
+    world::{Block, World},
 };
 use glium::{index::PrimitiveType, texture::Texture2d, IndexBuffer, VertexBuffer};
 use nalgebra::{Matrix4, Vector3};
@@ -20,11 +20,14 @@ pub fn main() {
 
     let mut world = World::new();
     world.generate_chunk((0, 0, 0));
-    world.set_block((5, 5, 5), if let Block::Empty = world.get_block((5, 5, 5)) {
-        Block::Filled
-    } else {
-        Block::Empty
-    });
+    world.set_block(
+        (5, 5, 5),
+        if let Block::Empty = world.get_block((5, 5, 5)) {
+            Block::Filled
+        } else {
+            Block::Empty
+        },
+    );
     world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
 
     let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);

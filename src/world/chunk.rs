@@ -5,7 +5,7 @@ use super::block::Block;
 use super::{WorldCoord, WorldPos};
 use crate::utils::{SubTextureInfo, Vertex};
 pub use adjacent_manager::AdjacentChunkManager;
-pub use chunkarray::{iter_flat, make_chunk_array, map_chunk_array, ChunkArray, CHUNK_SIZE};
+pub use chunkarray::{ChunkArray, CHUNK_SIZE};
 
 pub type ChunkPos = isize;
 pub type ChunkCoord = (ChunkPos, ChunkPos, ChunkPos);
@@ -22,8 +22,8 @@ pub struct Chunk {
 impl Chunk {
     pub fn new(location: ChunkCoord) -> Self {
         Chunk {
-            blocks: make_chunk_array(),
-            vertices: make_chunk_array(),
+            blocks: ChunkArray::new(),
+            vertices: ChunkArray::new(),
             location,
         }
     }
@@ -38,12 +38,12 @@ impl Chunk {
         )
     }
 
-    pub fn get_local_block(&self, (x, y, z): BlockCoord) -> Block {
-        self.blocks[x as usize][y as usize][z as usize]
+    pub fn get_local_block(&self, pos: BlockCoord) -> Block {
+        self.blocks.get(pos).clone()
     }
 
-    pub fn set_local_block(&mut self, (x, y, z): BlockCoord, block: Block) {
-        self.blocks[x as usize][y as usize][z as usize] = block;
+    pub fn set_local_block(&mut self, pos: BlockCoord, block: Block) {
+        self.blocks.set(pos, block);
         // TODO: Update vertices?
     }
 
@@ -52,7 +52,7 @@ impl Chunk {
         texture_info: &'a SubTextureInfo,
         adj_chunk_manager: AdjacentChunkManager<'a>,
     ) -> ChunkArray<Vec<Vertex>> {
-        map_chunk_array(&self.blocks, |pos, block| {
+        self.blocks.map(|pos, block| {
             block.get_vertices(
                 self.to_world_coords(pos),
                 pos,

@@ -3,7 +3,7 @@ mod chunk;
 
 use crate::utils::{SubTextureInfo, Vertex};
 pub use block::Block;
-use chunk::{iter_flat, AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
+use chunk::{AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
 use std::collections::HashMap;
 
 type WorldPos = isize;
@@ -76,7 +76,7 @@ impl World {
         let mut vertices = Vec::new();
         for chunk_coord in chunk_coords {
             if let Some(chunk) = self.get_chunk(chunk_coord) {
-                for face_vertices in iter_flat(&chunk.vertices) {
+                for face_vertices in chunk.vertices.iter_flat() {
                     vertices.extend(face_vertices);
                 }
             }
