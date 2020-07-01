@@ -5,8 +5,9 @@ use crate::{
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
-    index::{PrimitiveType, IndicesSource},
+    index::{IndicesSource, PrimitiveType},
     texture::Texture2d,
+    uniforms::{MagnifySamplerFilter, MinifySamplerFilter},
     VertexBuffer,
 };
 use nalgebra::{Isometry3, Similarity3, Translation3, UnitQuaternion, Vector3};
@@ -120,7 +121,11 @@ impl RenderController for Blocques {
             },
             model: &self.model,
             view: &self.view,
-            texture: &self.texture,
+            sampler: self
+                .texture
+                .sampled()
+                .magnify_filter(MagnifySamplerFilter::Nearest)
+                .minify_filter(MinifySamplerFilter::Nearest),
             background_colour: self.background_colour,
             fov: self.fov,
             near: self.near,

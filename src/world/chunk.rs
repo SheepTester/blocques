@@ -55,12 +55,15 @@ impl Chunk {
     ) -> HashMap<BlockCoord, Vec<Vertex>> {
         let mut vertices = HashMap::new();
         for (pos, block) in self.blocks.iter_flat_coords() {
-            vertices.insert(pos, block.get_vertices(
-                self.to_world_coords(pos),
+            vertices.insert(
                 pos,
-                texture_info,
-                &adj_chunk_manager,
-            ));
+                block.get_vertices(
+                    self.to_world_coords(pos),
+                    pos,
+                    texture_info,
+                    &adj_chunk_manager,
+                ),
+            );
         }
         vertices
     }

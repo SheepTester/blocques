@@ -7,8 +7,11 @@ use glium::{
         window::WindowBuilder,
         ContextBuilder,
     },
+    index::IndicesSource,
     texture::Texture2d,
-    uniform, Depth, Display, DrawParameters, Program, Surface, VertexBuffer, index::IndicesSource,
+    uniform,
+    uniforms::Sampler,
+    Depth, Display, DrawParameters, Program, Surface, VertexBuffer,
 };
 use nalgebra::{Isometry3, Perspective3, Similarity3};
 use std::time::Instant;
@@ -17,8 +20,8 @@ pub struct RenderValues<'a> {
     pub vertex_buffer: &'a VertexBuffer<Vertex>,
     pub indices: IndicesSource<'a>,
     pub model: &'a Similarity3<f32>, // Transformation of object itself
-    pub view: &'a Isometry3<f32>,  // Transformation due to camera
-    pub texture: &'a Texture2d,
+    pub view: &'a Isometry3<f32>,    // Transformation due to camera
+    pub sampler: Sampler<'a, Texture2d>,
     pub background_colour: (f32, f32, f32, f32),
     pub fov: f32,
     pub near: f32,
@@ -107,7 +110,7 @@ impl Renderer {
                 indices,
                 model,
                 view,
-                texture,
+                sampler,
                 background_colour,
                 fov,
                 near,
@@ -128,7 +131,7 @@ impl Renderer {
                     &program,
                     &uniform! {
                         transform: *transform_ref,
-                        tex: texture,
+                        tex: sampler,
                     },
                     &params,
                 )
