@@ -8,14 +8,13 @@ use glium::{
         ContextBuilder,
     },
     texture::Texture2d,
-    uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer,
+    uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer, index::IndicesSource,
 };
 use nalgebra::{Isometry3, Perspective3, Similarity3};
 use std::time::Instant;
 
 pub struct RenderValues<'a> {
     pub vertex_buffer: &'a VertexBuffer<Vertex>,
-    pub index_buffer: &'a IndexBuffer<u16>,
     pub model: &'a Similarity3<f32>, // Transformation of object itself
     pub view: &'a Isometry3<f32>,  // Transformation due to camera
     pub texture: &'a Texture2d,
@@ -25,10 +24,11 @@ pub struct RenderValues<'a> {
     pub far: f32,
 }
 
-pub trait RenderController {
+pub trait RenderController<'a, I> where I: Into<IndicesSource<'a>> {
     fn on_key_event(&mut self, _key_event: KeyboardInput) {}
     fn on_frame(&mut self, _total_elapsed: f32, _elapsed: f32) {}
     fn get_values(&self) -> RenderValues;
+    fn give_indices(&self) -> I;
 }
 
 pub struct Renderer {
@@ -61,7 +61,7 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, mut controller: Box<dyn RenderController>) {
+    pub fn start<'a, I>(self, mut controller: Box<dyn RenderController<'a, I>>) {
         let display = self.display;
         let event_loop = self.event_loop;
         let program = self.program;
@@ -104,7 +104,6 @@ impl Renderer {
             controller.on_frame(total_elapsed, elapsed);
             let RenderValues {
                 vertex_buffer,
-                index_buffer,
                 model,
                 view,
                 texture,
@@ -113,6 +112,7 @@ impl Renderer {
                 near,
                 far,
             } = controller.get_values();
+            let indices = controller.give_indices();
 
             let (width, height) = target.get_dimensions();
             let projection = Perspective3::new(width as f32 / height as f32, fov, near, far);
@@ -124,7 +124,7 @@ impl Renderer {
             target
                 .draw(
                     vertex_buffer,
-                    index_buffer,
+                    indices,
                     &program,
                     &uniform! {
                         transform: *transform_ref,

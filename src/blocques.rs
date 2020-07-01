@@ -5,7 +5,7 @@ use crate::{
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
-    index::PrimitiveType,
+    index::{NoIndices, PrimitiveType},
     texture::Texture2d,
     IndexBuffer, VertexBuffer,
 };
@@ -14,7 +14,6 @@ use std::{collections::HashMap, f32::consts::PI};
 
 struct Blocques {
     vertex_buffer: VertexBuffer<Vertex>,
-    index_buffer: IndexBuffer<u16>,
     model: Similarity3<f32>,
     view: Isometry3<f32>,
     texture: Texture2d,
@@ -35,7 +34,7 @@ impl Blocques {
     }
 }
 
-impl RenderController for Blocques {
+impl<'a, NoIndices> RenderController<'a, NoIndices> for Blocques {
     fn on_key_event(&mut self, key_event: KeyboardInput) {
         if let Some(key) = key_event.virtual_keycode {
             if let ElementState::Pressed = key_event.state {
@@ -116,7 +115,6 @@ impl RenderController for Blocques {
     fn get_values(&self) -> RenderValues {
         RenderValues {
             vertex_buffer: &self.vertex_buffer,
-            index_buffer: &self.index_buffer,
             model: &self.model,
             view: &self.view,
             texture: &self.texture,
@@ -125,6 +123,10 @@ impl RenderController for Blocques {
             near: self.near,
             far: self.far,
         }
+    }
+
+    fn give_indices(&self) -> NoIndices {
+        NoIndices(PrimitiveType::TriangleStrip)
     }
 }
 
@@ -153,13 +155,9 @@ pub fn main() {
 
     let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
     let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();
-    let indices: Vec<u16> = vec![0, 1, 3, 1, 2, 3];
-    let index_buffer =
-        IndexBuffer::new(&renderer.display, PrimitiveType::TrianglesList, &indices).unwrap();
 
     let controller = Blocques {
         vertex_buffer,
-        index_buffer,
         model: Similarity3::identity(),
         view: Isometry3::identity(),
         texture,
