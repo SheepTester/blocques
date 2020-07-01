@@ -2,7 +2,7 @@ use super::utils::Vertex;
 use glium::{
     draw_parameters::{BackfaceCullingMode, DepthTest},
     glutin::{
-        event::{Event, WindowEvent},
+        event::{Event, KeyboardInput, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
         ContextBuilder,
@@ -10,14 +10,14 @@ use glium::{
     texture::Texture2d,
     uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer,
 };
-use nalgebra::Matrix4;
+use nalgebra::{Isometry3, Perspective3};
 use std::time::Instant;
 
 pub struct RenderValues<'a> {
     pub vertex_buffer: &'a VertexBuffer<Vertex>,
     pub index_buffer: &'a IndexBuffer<u16>,
-    pub model: &'a Matrix4<f32>, // Transformation of object itself
-    pub view: &'a Matrix4<f32>, // Transformation due to camera
+    pub model: &'a Isometry3<f32>, // Transformation of object itself
+    pub view: &'a Isometry3<f32>,  // Transformation due to camera
     pub texture: &'a Texture2d,
     pub background_colour: (f32, f32, f32, f32),
     pub fov: f32,
@@ -26,7 +26,8 @@ pub struct RenderValues<'a> {
 }
 
 pub trait RenderController {
-    fn update(&mut self, total_elapsed: f32, elapsed: f32);
+    fn on_key_event(&mut self, _key_event: KeyboardInput) {}
+    fn on_frame(&mut self, _total_elapsed: f32, _elapsed: f32) {}
     fn get_values(&self) -> RenderValues;
 }
 
@@ -71,7 +72,7 @@ impl Renderer {
                 write: true,
                 ..Default::default()
             },
-            backface_culling: BackfaceCullingMode::CullClockwise,
+            // backface_culling: BackfaceCullingMode::CullClockwise,
             ..Default::default()
         };
 
@@ -82,7 +83,7 @@ impl Renderer {
             match ev {
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::KeyboardInput { input, .. } => {
-                        println!("Keyboard input: {:?}", input);
+                        controller.on_key_event(input);
                     }
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
@@ -100,7 +101,7 @@ impl Renderer {
 
             let mut target = display.draw();
 
-            controller.update(total_elapsed, elapsed);
+            controller.on_frame(total_elapsed, elapsed);
             let RenderValues {
                 vertex_buffer,
                 index_buffer,
@@ -114,12 +115,10 @@ impl Renderer {
             } = controller.get_values();
 
             let (width, height) = target.get_dimensions();
-            let perspective =
-                Matrix4::new_perspective(width as f32 / height as f32, fov, near, far);
-            let perspective_ref = perspective.as_ref();
+            let projection = Perspective3::new(width as f32 / height as f32, fov, near, far);
 
-            let model_ref = model.as_ref();
-            let view_ref = view.as_ref();
+            let transform = projection.into_inner() * (view * model).to_homogeneous();
+            let transform_ref = transform.as_ref();
 
             target.clear_color_and_depth(background_colour, 1.0);
             target
@@ -128,9 +127,7 @@ impl Renderer {
                     index_buffer,
                     &program,
                     &uniform! {
-                        model: *model_ref,
-                        view: *view_ref,
-                        perspective: *perspective_ref,
+                        transform: *transform_ref,
                         tex: texture,
                     },
                     &params,

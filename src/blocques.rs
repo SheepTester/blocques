@@ -3,15 +3,20 @@ use crate::{
     utils::{self, SubTextureInfo, Vertex},
     world::{Block, World},
 };
-use glium::{index::PrimitiveType, texture::Texture2d, IndexBuffer, VertexBuffer};
-use nalgebra::{Matrix4, Vector3};
-use std::f32::consts::PI;
+use glium::{
+    glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
+    index::PrimitiveType,
+    texture::Texture2d,
+    IndexBuffer, VertexBuffer,
+};
+use nalgebra::{Isometry3, UnitQuaternion, Translation3, Vector3};
+use std::{collections::HashMap, f32::consts::PI};
 
 struct Blocques {
     vertex_buffer: VertexBuffer<Vertex>,
     index_buffer: IndexBuffer<u16>,
-    model: Matrix4<f32>,
-    view: Matrix4<f32>,
+    model: Isometry3<f32>,
+    view: Isometry3<f32>,
     texture: Texture2d,
     background_colour: (f32, f32, f32, f32),
     fov: f32,
@@ -20,22 +25,93 @@ struct Blocques {
 
     camera_pos: Vector3<f32>,
     camera_rot: (f32, f32, f32),
+
+    keys: HashMap<KeyCode, bool>,
+}
+
+impl Blocques {
+    fn is_key_down(&self, key: &KeyCode) -> bool {
+        self.keys.get(key).unwrap_or(&false).to_owned()
+    }
 }
 
 impl RenderController for Blocques {
-    fn update(&mut self, total_elapsed: f32, _elapsed: f32) {
-        // self.model = Matrix4::from_euler_angles(
-        //     0.0,
-        //     // PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
-        //     (total_elapsed / 2.0 * PI).floor() * 2.0 * PI / 5.0,
-        //     0.0,
-        // )
-        // .append_translation(&Vector3::new(0.0, 0.0, -2.0));
-        // self.camera_rot.1 = total_elapsed;
+    fn on_key_event(&mut self, key_event: KeyboardInput) {
+        if let Some(key) = key_event.virtual_keycode {
+            if let ElementState::Pressed = key_event.state {
+                match key {
+                    KeyCode::R => {
+                        println!("Position {:?}; rotation {:?}", self.camera_pos, self.camera_rot);
+                    },
+                    _ => {},
+                }
+            }
+            self.keys.insert(
+                key,
+                match key_event.state {
+                    ElementState::Pressed => true,
+                    ElementState::Released => false,
+                },
+            );
+        }
+    }
 
-        let (rx, ry, rz) = self.camera_rot;
-        self.view = Matrix4::from_euler_angles(rz, rx, ry)
-            .append_translation(&self.camera_pos.scale(-1.0));
+    fn on_frame(&mut self, total_elapsed: f32, elapsed: f32) {
+        if self.is_key_down(&KeyCode::Left) {
+            self.camera_rot.1 -= elapsed * PI;
+        }
+        if self.is_key_down(&KeyCode::Right) {
+            self.camera_rot.1 += elapsed * PI;
+        }
+
+        if self.is_key_down(&KeyCode::Up) {
+            self.camera_rot.0 -= elapsed * PI;
+            if self.camera_rot.0 < -PI / 2.0 {
+                self.camera_rot.0 = -PI / 2.0;
+            }
+        }
+        if self.is_key_down(&KeyCode::Down) {
+            self.camera_rot.0 += elapsed * PI;
+            if self.camera_rot.0 > PI / 2.0 {
+                self.camera_rot.0 = PI / 2.0;
+            }
+        }
+
+        if self.is_key_down(&KeyCode::A) {
+            self.camera_pos.x -= elapsed;
+        }
+        if self.is_key_down(&KeyCode::D) {
+            self.camera_pos.x += elapsed;
+        }
+        if self.is_key_down(&KeyCode::W) {
+            self.camera_pos.z -= elapsed;
+        }
+        if self.is_key_down(&KeyCode::S) {
+            self.camera_pos.z += elapsed;
+        }
+        if self.is_key_down(&KeyCode::LShift) {
+            self.camera_pos.y -= elapsed;
+        }
+        if self.is_key_down(&KeyCode::Space) {
+            self.camera_pos.y += elapsed;
+        }
+
+        // self.model = Isometry3::from_parts(
+        //     Translation3::from(Vector3::new(0.0, 0.0, -2.0)),
+        //     UnitQuaternion::from_euler_angles(
+        //         0.0,
+        //         PI / 6.0 * (total_elapsed * 2.0 * PI).sin(),
+        //         // (total_elapsed / 2.0 * PI).floor() * 2.0 * PI / 5.0,
+        //         0.0,
+        //     ),
+        // );
+
+        let (rx, ry, _rz) = self.camera_rot;
+        self.view = Isometry3::from_parts(
+            Translation3::from(self.camera_pos),
+            // UnitQuaternion::from_euler_angles(rz, rx, ry),
+            UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rx) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), ry),
+        );
     }
 
     fn get_values(&self) -> RenderValues {
@@ -75,24 +151,27 @@ pub fn main() {
         },
     );
     world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
-    println!("Vertices generated: {}", world.get_vertices_for_chunks(vec![(0, 0, 0)]).len());
+    println!(
+        "Vertices generated: {}",
+        world.get_vertices_for_chunks(vec![(0, 0, 0)]).len()
+    );
 
     // let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
     let vertices = vec![
         Vertex {
-            position: [0.5, 0.5, 0.0],
+            position: [2.0, -5.0, 2.0],
             tex_coords: [1.0, 1.0],
         },
         Vertex {
-            position: [0.5, -0.5, 0.0],
+            position: [2.0, -5.0, -2.0],
             tex_coords: [1.0, 0.0],
         },
         Vertex {
-            position: [-0.5, -0.5, 0.5],
+            position: [-2.0, -5.0, -2.0],
             tex_coords: [0.0, 0.0],
         },
         Vertex {
-            position: [-0.5, 0.5, 0.0],
+            position: [-2.0, -4.5, 2.0],
             tex_coords: [0.0, 1.0],
         },
     ];
@@ -104,9 +183,11 @@ pub fn main() {
     let controller = Blocques {
         vertex_buffer,
         index_buffer,
-        model: Matrix4::from_euler_angles(0.0, 4.0 * PI / 5.0, 0.0),
-        // model: Matrix4::identity(),
-        view: Matrix4::identity(),
+        model: Isometry3::from_parts(
+            Translation3::identity(),
+            UnitQuaternion::from_euler_angles(0.0, 4.0 * PI / 5.0, 0.0),
+        ),
+        view: Isometry3::identity(),
         texture,
         background_colour: (0.005, 0.0, 0.01, 1.0),
         fov: PI / 3.0,
@@ -115,6 +196,8 @@ pub fn main() {
 
         camera_pos: Vector3::new(0.0, 0.0, 2.0),
         camera_rot: (0.0, 0.0, 0.0),
+
+        keys: HashMap::new(),
     };
     renderer.start(Box::new(controller));
 }

@@ -5,11 +5,9 @@ in vec2 tex_coords;
 
 out vec2 v_tex_coords;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 perspective;
+uniform mat4 transform;
 
 void main() {
     v_tex_coords = tex_coords;
-    gl_Position = perspective * view * model * vec4(position, 1.0);
+    gl_Position = transform * vec4(position, 1.0);
 }
