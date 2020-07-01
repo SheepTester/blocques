@@ -16,7 +16,8 @@ use std::time::Instant;
 pub struct RenderValues<'a> {
     pub vertex_buffer: &'a VertexBuffer<Vertex>,
     pub index_buffer: &'a IndexBuffer<u16>,
-    pub model: &'a Matrix4<f32>,
+    pub model: &'a Matrix4<f32>, // Transformation of object itself
+    pub view: &'a Matrix4<f32>, // Transformation due to camera
     pub texture: &'a Texture2d,
     pub background_colour: (f32, f32, f32, f32),
     pub fov: f32,
@@ -25,7 +26,7 @@ pub struct RenderValues<'a> {
 }
 
 pub trait RenderController {
-    fn draw(&mut self, total_elapsed: f32, elapsed: f32);
+    fn update(&mut self, total_elapsed: f32, elapsed: f32);
     fn get_values(&self) -> RenderValues;
 }
 
@@ -99,11 +100,12 @@ impl Renderer {
 
             let mut target = display.draw();
 
-            controller.draw(total_elapsed, elapsed);
+            controller.update(total_elapsed, elapsed);
             let RenderValues {
                 vertex_buffer,
                 index_buffer,
                 model,
+                view,
                 texture,
                 background_colour,
                 fov,
@@ -117,6 +119,7 @@ impl Renderer {
             let perspective_ref = perspective.as_ref();
 
             let model_ref = model.as_ref();
+            let view_ref = view.as_ref();
 
             target.clear_color_and_depth(background_colour, 1.0);
             target
@@ -125,7 +128,8 @@ impl Renderer {
                     index_buffer,
                     &program,
                     &uniform! {
-                        matrix: *model_ref,
+                        model: *model_ref,
+                        view: *view_ref,
                         perspective: *perspective_ref,
                         tex: texture,
                     },
