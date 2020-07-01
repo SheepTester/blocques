@@ -9,13 +9,14 @@ use glium::{
     },
     texture::Texture2d,
     uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer,
+    index::IndicesSource,
 };
 use nalgebra::{Isometry3, Perspective3, Similarity3};
 use std::time::Instant;
 
-pub struct RenderValues<'a> {
+pub struct RenderValues<'a, I: Into<IndicesSource<'a>>> {
     pub vertex_buffer: &'a VertexBuffer<Vertex>,
-    pub index_buffer: &'a IndexBuffer<u16>,
+    pub index_buffer: &'a I,
     pub model: &'a Similarity3<f32>, // Transformation of object itself
     pub view: &'a Isometry3<f32>,  // Transformation due to camera
     pub texture: &'a Texture2d,
@@ -25,10 +26,10 @@ pub struct RenderValues<'a> {
     pub far: f32,
 }
 
-pub trait RenderController {
+pub trait RenderController<'a, I: Into<IndicesSource<'a>>> {
     fn on_key_event(&mut self, _key_event: KeyboardInput) {}
     fn on_frame(&mut self, _total_elapsed: f32, _elapsed: f32) {}
-    fn get_values(&self) -> RenderValues;
+    fn get_values(&self) -> RenderValues<'a, I>;
 }
 
 pub struct Renderer {
@@ -61,7 +62,7 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, mut controller: Box<dyn RenderController>) {
+    pub fn start<'a, I: Into<IndicesSource<'a>>>(self, mut controller: Box<dyn RenderController<I>>) {
         let display = self.display;
         let event_loop = self.event_loop;
         let program = self.program;

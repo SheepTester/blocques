@@ -5,7 +5,7 @@ use crate::{
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
-    index::PrimitiveType,
+    index::{IndicesSource, NoIndices, PrimitiveType},
     texture::Texture2d,
     IndexBuffer, VertexBuffer,
 };
@@ -14,7 +14,7 @@ use std::{collections::HashMap, f32::consts::PI};
 
 struct Blocques {
     vertex_buffer: VertexBuffer<Vertex>,
-    index_buffer: IndexBuffer<u16>,
+    index_buffer: NoIndices,
     model: Similarity3<f32>,
     view: Isometry3<f32>,
     texture: Texture2d,
@@ -35,7 +35,7 @@ impl Blocques {
     }
 }
 
-impl RenderController for Blocques {
+impl RenderController<'_, NoIndices> for Blocques {
     fn on_key_event(&mut self, key_event: KeyboardInput) {
         if let Some(key) = key_event.virtual_keycode {
             if let ElementState::Pressed = key_event.state {
@@ -113,7 +113,7 @@ impl RenderController for Blocques {
             * Translation3::from(self.camera_pos.scale(-1.0));
     }
 
-    fn get_values(&self) -> RenderValues {
+    fn get_values<'a, I: Into<IndicesSource<'a>>>(&self) -> RenderValues<I> {
         RenderValues {
             vertex_buffer: &self.vertex_buffer,
             index_buffer: &self.index_buffer,
@@ -142,46 +142,21 @@ pub fn main() {
     let mut world = World::new();
     world.generate_chunk((0, 0, 0));
     world.set_block(
-        (5, 5, 5),
-        if let Block::Empty = world.get_block((5, 5, 5)) {
+        (1, 1, 1),
+        if let Block::Empty = world.get_block((1, 1, 1)) {
             Block::Filled
         } else {
             Block::Empty
         },
     );
     world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
-    println!(
-        "Vertices generated: {}",
-        world.get_vertices_for_chunks(vec![(0, 0, 0)]).len()
-    );
 
-    // let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
-    let vertices = vec![
-        Vertex {
-            position: [0.5, -5.0, 0.5],
-            tex_coords: [1.0, 1.0],
-        },
-        Vertex {
-            position: [0.5, -5.0, -0.5],
-            tex_coords: [1.0, 0.0],
-        },
-        Vertex {
-            position: [-0.5, -5.0, -0.5],
-            tex_coords: [0.0, 0.0],
-        },
-        Vertex {
-            position: [-0.5, -3.0, 0.5],
-            tex_coords: [0.0, 1.0],
-        },
-    ];
+    let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
     let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();
-    let indices: Vec<u16> = vec![0, 1, 3, 1, 2, 3];
-    let index_buffer =
-        IndexBuffer::new(&renderer.display, PrimitiveType::TrianglesList, &indices).unwrap();
 
     let controller = Blocques {
         vertex_buffer,
-        index_buffer,
+        index_buffer: NoIndices(PrimitiveType::LinesListAdjacency),
         model: Similarity3::identity(),
         view: Isometry3::identity(),
         texture,
