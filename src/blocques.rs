@@ -150,30 +150,8 @@ pub fn main() {
         },
     );
     world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
-    println!(
-        "Vertices generated: {}",
-        world.get_vertices_for_chunks(vec![(0, 0, 0)]).len()
-    );
 
-    // let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
-    let vertices = vec![
-        Vertex {
-            position: [0.5, -5.0, 0.5],
-            tex_coords: [1.0, 1.0],
-        },
-        Vertex {
-            position: [0.5, -5.0, -0.5],
-            tex_coords: [1.0, 0.0],
-        },
-        Vertex {
-            position: [-0.5, -5.0, -0.5],
-            tex_coords: [0.0, 0.0],
-        },
-        Vertex {
-            position: [-0.5, -3.0, 0.5],
-            tex_coords: [0.0, 1.0],
-        },
-    ];
+    let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
     let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();
     let indices: Vec<u16> = vec![0, 1, 3, 1, 2, 3];
     let index_buffer =
