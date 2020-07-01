@@ -10,13 +10,13 @@ use glium::{
     texture::Texture2d,
     uniform, Depth, Display, DrawParameters, IndexBuffer, Program, Surface, VertexBuffer,
 };
-use nalgebra::{Isometry3, Perspective3};
+use nalgebra::{Isometry3, Perspective3, Similarity3};
 use std::time::Instant;
 
 pub struct RenderValues<'a> {
     pub vertex_buffer: &'a VertexBuffer<Vertex>,
     pub index_buffer: &'a IndexBuffer<u16>,
-    pub model: &'a Isometry3<f32>, // Transformation of object itself
+    pub model: &'a Similarity3<f32>, // Transformation of object itself
     pub view: &'a Isometry3<f32>,  // Transformation due to camera
     pub texture: &'a Texture2d,
     pub background_colour: (f32, f32, f32, f32),
