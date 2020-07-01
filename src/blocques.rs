@@ -5,9 +5,9 @@ use crate::{
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
-    index::{NoIndices, PrimitiveType},
+    index::{PrimitiveType, IndicesSource},
     texture::Texture2d,
-    IndexBuffer, VertexBuffer,
+    VertexBuffer,
 };
 use nalgebra::{Isometry3, Similarity3, Translation3, UnitQuaternion, Vector3};
 use std::{collections::HashMap, f32::consts::PI};
@@ -34,7 +34,7 @@ impl Blocques {
     }
 }
 
-impl<'a, NoIndices> RenderController<'a, NoIndices> for Blocques {
+impl RenderController for Blocques {
     fn on_key_event(&mut self, key_event: KeyboardInput) {
         if let Some(key) = key_event.virtual_keycode {
             if let ElementState::Pressed = key_event.state {
@@ -115,6 +115,9 @@ impl<'a, NoIndices> RenderController<'a, NoIndices> for Blocques {
     fn get_values(&self) -> RenderValues {
         RenderValues {
             vertex_buffer: &self.vertex_buffer,
+            indices: IndicesSource::NoIndices {
+                primitives: PrimitiveType::TriangleStrip,
+            },
             model: &self.model,
             view: &self.view,
             texture: &self.texture,
@@ -123,10 +126,6 @@ impl<'a, NoIndices> RenderController<'a, NoIndices> for Blocques {
             near: self.near,
             far: self.far,
         }
-    }
-
-    fn give_indices(&self) -> NoIndices {
-        NoIndices(PrimitiveType::TriangleStrip)
     }
 }
 
@@ -144,8 +143,8 @@ pub fn main() {
     let mut world = World::new();
     world.generate_chunk((0, 0, 0));
     world.set_block(
-        (5, 5, 5),
-        if let Block::Empty = world.get_block((5, 5, 5)) {
+        (1, 1, 1),
+        if let Block::Empty = world.get_block((1, 1, 1)) {
             Block::Filled
         } else {
             Block::Empty
