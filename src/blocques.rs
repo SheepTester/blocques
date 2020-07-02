@@ -1,20 +1,24 @@
 use crate::{
     rendering::{RenderController, RenderValues, Renderer},
     utils::{self, SubTextureInfo, Vertex},
-    world::{Block, World},
+    world::{Block, ChunkCoord, World},
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
     index::{IndicesSource, PrimitiveType},
     texture::Texture2d,
     uniforms::{MagnifySamplerFilter, MinifySamplerFilter},
-    VertexBuffer,
+    Display, IndexBuffer, VertexBuffer,
 };
 use nalgebra::{Isometry3, Similarity3, Translation3, UnitQuaternion, Vector3};
-use std::{collections::HashMap, f32::consts::PI};
+use std::{collections::HashMap, error::Error, f32::consts::PI};
 
 struct Blocques {
+    world: World,
+    texture_info: SubTextureInfo,
+
     vertex_buffer: VertexBuffer<Vertex>,
+    index_buffer: Option<IndexBuffer<u16>>,
     model: Similarity3<f32>,
     view: Isometry3<f32>,
     texture: Texture2d,
@@ -30,6 +34,57 @@ struct Blocques {
 }
 
 impl Blocques {
+    fn new(texture: Texture2d, display: &Display) -> Result<Self, Box<dyn Error>> {
+        let vertices = vec![];
+        Ok(Blocques {
+            world: World::new(),
+            texture_info: SubTextureInfo {
+                x: 0.0,
+                y: 0.0,
+                size: 1.0,
+            },
+
+            vertex_buffer: VertexBuffer::new(display, &vertices)?,
+            index_buffer: None,
+            model: Similarity3::identity(),
+            view: Isometry3::identity(),
+            texture,
+            background_colour: (0.005, 0.0, 0.01, 1.0),
+            fov: PI / 3.0,
+            near: 0.1,
+            far: 1024.0,
+
+            camera_pos: Vector3::new(0.0, 0.0, 0.0),
+            camera_rot: (0.0, 0.0, 0.0),
+
+            keys: HashMap::new(),
+        })
+    }
+
+    fn update_vertices_for_chunks(
+        &mut self,
+        chunk_coords: Vec<ChunkCoord>,
+        display: &Display,
+    ) -> Result<(), Box<dyn Error>> {
+        let vertices = self.world.get_vertices_for_chunks(chunk_coords);
+        self.vertex_buffer = VertexBuffer::new(display, &vertices)?;
+
+        let squares = vertices.len() / 4;
+        let mut indices = Vec::with_capacity(squares * 6);
+        for square in 0..squares {
+            let i = square as u16 * 4;
+            indices.extend(vec![
+                i, i + 1, i + 3, i + 1, i + 2, i + 3
+            ]);
+        }
+        self.index_buffer = Some(IndexBuffer::new(
+            display,
+            PrimitiveType::TrianglesList,
+            &indices,
+        )?);
+        Ok(())
+    }
+
     fn is_key_down(&self, key: &KeyCode) -> bool {
         self.keys.get(key).unwrap_or(&false).to_owned()
     }
@@ -116,8 +171,11 @@ impl RenderController for Blocques {
     fn get_values(&self) -> RenderValues {
         RenderValues {
             vertex_buffer: &self.vertex_buffer,
-            indices: IndicesSource::NoIndices {
-                primitives: PrimitiveType::TriangleStrip,
+            indices: match &self.index_buffer {
+                Some(buffer) => IndicesSource::from(buffer),
+                None => IndicesSource::NoIndices {
+                    primitives: PrimitiveType::TriangleStrip,
+                },
             },
             model: &self.model,
             view: &self.view,
@@ -134,46 +192,30 @@ impl RenderController for Blocques {
     }
 }
 
-pub fn main() {
+pub fn main() -> Result<(), Box<dyn Error>> {
     let renderer = Renderer::new();
 
-    let image = utils::load_image(include_bytes!("./assets/blocques.png"));
-    let texture = Texture2d::new(&renderer.display, image).unwrap();
-    let texture_info = SubTextureInfo {
-        x: 0.0,
-        y: 0.0,
-        size: 1.0,
-    };
+    let image = utils::load_image(include_bytes!("./assets/blocques2.png"));
+    let texture = Texture2d::new(&renderer.display, image)?;
 
-    let mut world = World::new();
-    world.generate_chunk((0, 0, 0));
-    world.set_block(
-        (1, 1, 1),
-        if let Block::Empty = world.get_block((1, 1, 1)) {
+    let mut controller = Blocques::new(texture, &renderer.display)?;
+    controller.camera_rot.1 = -3.0 * PI / 4.0;
+    controller.camera_rot.0 = PI / 4.0;
+    controller.world.generate_chunk((0, 0, 0));
+    controller.world.set_block(
+        (2, 2, 2),
+        if let Block::Empty = controller.world.get_block((2, 2, 2)) {
             Block::Filled
         } else {
             Block::Empty
         },
     );
-    world.generate_vertices_for_chunks(vec![(0, 0, 0)], &texture_info);
-
-    let vertices = world.get_vertices_for_chunks(vec![(0, 0, 0)]);
-    let vertex_buffer = VertexBuffer::new(&renderer.display, &vertices).unwrap();
-
-    let controller = Blocques {
-        vertex_buffer,
-        model: Similarity3::identity(),
-        view: Isometry3::identity(),
-        texture,
-        background_colour: (0.005, 0.0, 0.01, 1.0),
-        fov: PI / 3.0,
-        near: 0.1,
-        far: 1024.0,
-
-        camera_pos: Vector3::new(0.0, 0.0, 2.0),
-        camera_rot: (0.0, 0.0, 0.0),
-
-        keys: HashMap::new(),
-    };
+    controller.world.set_block((0, 1, 2), Block::Filled);
+    controller.world.set_block((2, 0, 0), Block::Filled);
+    controller
+        .world
+        .generate_vertices_for_chunks(vec![(0, 0, 0)], &controller.texture_info);
+    controller.update_vertices_for_chunks(vec![(0, 0, 0)], &renderer.display)?;
     renderer.start(Box::new(controller));
+    Ok(())
 }

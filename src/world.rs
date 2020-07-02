@@ -3,7 +3,8 @@ mod chunk;
 
 use crate::utils::{SubTextureInfo, Vertex};
 pub use block::Block;
-use chunk::{AdjacentChunkManager, BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
+use chunk::AdjacentChunkManager;
+pub use chunk::{BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
 use std::collections::HashMap;
 
 type WorldPos = isize;

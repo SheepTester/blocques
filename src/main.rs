@@ -4,5 +4,5 @@ mod utils;
 mod world;
 
 fn main() {
-    blocques::main();
+    blocques::main().unwrap();
 }
