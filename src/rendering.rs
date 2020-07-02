@@ -75,7 +75,8 @@ impl Renderer {
                 write: true,
                 ..Default::default()
             },
-            backface_culling: BackfaceCullingMode::CullClockwise,
+            // This means that counterclockwise vertices WON'T be drawn!
+            backface_culling: BackfaceCullingMode::CullCounterClockwise,
             ..Default::default()
         };
 

@@ -1,10 +1,10 @@
 use crate::utils::{SubTextureInfo, Vertex};
 
 // The face vertices should go clockwise:
-// 4 $    * 1
+// 3 $    * 0
 // ^        |
 // |        v
-// 3 <----- 2
+// 2 <----- 1
 
 // [axis: X|Y|Z][dir: Neg|Pos]
 // The axis will remain unchained. It'll be axis when Neg and axis + FACE when Pos.
@@ -34,8 +34,8 @@ impl Face {
                     Face::XPos => [x + FACE, y + FACE, z],
                     Face::YNeg => [x, y, z],
                     Face::YPos => [x + FACE, y + FACE, z],
-                    Face::ZNeg => [x + FACE, y + FACE, z],
-                    Face::ZPos => [x, y + FACE, z + FACE],
+                    Face::ZNeg => [x, y + FACE, z],
+                    Face::ZPos => [x + FACE, y + FACE, z + FACE],
                 },
                 tex_coords: [
                     texture_info.x + texture_info.size,
@@ -48,8 +48,8 @@ impl Face {
                     Face::XPos => [x + FACE, y, z],
                     Face::YNeg => [x, y, z + FACE],
                     Face::YPos => [x + FACE, y + FACE, z + FACE],
-                    Face::ZNeg => [x + FACE, y, z],
-                    Face::ZPos => [x, y, z + FACE],
+                    Face::ZNeg => [x, y, z],
+                    Face::ZPos => [x + FACE, y, z + FACE],
                 },
                 tex_coords: [texture_info.x + texture_info.size, texture_info.y],
             },
@@ -59,8 +59,8 @@ impl Face {
                     Face::XPos => [x + FACE, y, z + FACE],
                     Face::YNeg => [x + FACE, y, z + FACE],
                     Face::YPos => [x, y + FACE, z + FACE],
-                    Face::ZNeg => [x, y, z],
-                    Face::ZPos => [x + FACE, y, z + FACE],
+                    Face::ZNeg => [x + FACE, y, z],
+                    Face::ZPos => [x, y, z + FACE],
                 },
                 tex_coords: [texture_info.x, texture_info.y],
             },
@@ -70,8 +70,8 @@ impl Face {
                     Face::XPos => [x + FACE, y + FACE, z + FACE],
                     Face::YNeg => [x + FACE, y, z],
                     Face::YPos => [x, y + FACE, z],
-                    Face::ZNeg => [x, y + FACE, z],
-                    Face::ZPos => [x + FACE, y + FACE, z + FACE],
+                    Face::ZNeg => [x + FACE, y + FACE, z],
+                    Face::ZPos => [x, y + FACE, z + FACE],
                 },
                 tex_coords: [texture_info.x, texture_info.y + texture_info.size],
             },
