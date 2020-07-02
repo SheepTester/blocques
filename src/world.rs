@@ -6,18 +6,21 @@ pub use block::Block;
 use chunk::AdjacentChunkManager;
 pub use chunk::{BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
 use std::collections::HashMap;
+use noise::{Perlin, NoiseFn, Seedable};
 
 type WorldPos = isize;
 type WorldCoord = (WorldPos, WorldPos, WorldPos);
 
 pub struct World {
     chunks: HashMap<ChunkCoord, Chunk>,
+    noise: Perlin,
 }
 
 impl World {
     pub fn new() -> Self {
         World {
             chunks: HashMap::new(),
+            noise: Perlin::new().set_seed(5),
         }
     }
 
@@ -30,7 +33,25 @@ impl World {
     }
 
     pub fn generate_chunk(&mut self, coord: ChunkCoord) {
-        let chunk = Chunk::new(coord);
+        let chunk_size = CHUNK_SIZE as BlockPos;
+        let mut chunk = Chunk::new(coord);
+        for x in 0..chunk_size {
+            for z in 0..chunk_size {
+                // Range is between [-1, 1]
+                // https://github.com/Razaekel/noise-rs/issues/228#issuecomment-625513764
+                let height = (self.noise.get([x as f64 * 10.0, z as f64 * 10.0]) * 6.0 + 8.0) as WorldPos;
+                let local_height = if height <= 0 {
+                    0
+                } else if height >= chunk_size as WorldPos {
+                    16
+                } else {
+                    height as BlockPos
+                };
+                for y in 0..local_height {
+                    chunk.set_local_block((x, y, z), Block::Filled);
+                }
+            }
+        }
         self.chunks.insert(coord, chunk);
     }
 

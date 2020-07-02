@@ -210,8 +210,6 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             Block::Empty
         },
     );
-    controller.world.set_block((0, 1, 2), Block::Filled);
-    controller.world.set_block((2, 0, 0), Block::Filled);
     controller
         .world
         .generate_vertices_for_chunks(vec![(0, 0, 0)], &controller.texture_info);
