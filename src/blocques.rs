@@ -73,9 +73,7 @@ impl Blocques {
         let mut indices = Vec::with_capacity(squares * 6);
         for square in 0..squares {
             let i = square as u16 * 4;
-            indices.extend(vec![
-                i, i + 1, i + 3, i + 1, i + 2, i + 3
-            ]);
+            indices.extend(vec![i, i + 1, i + 3, i + 1, i + 2, i + 3]);
         }
         self.index_buffer = Some(IndexBuffer::new(
             display,

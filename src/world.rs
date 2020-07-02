@@ -5,8 +5,8 @@ use crate::utils::{SubTextureInfo, Vertex};
 pub use block::Block;
 use chunk::AdjacentChunkManager;
 pub use chunk::{BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
+use noise::{NoiseFn, Perlin, Seedable};
 use std::collections::HashMap;
-use noise::{Perlin, NoiseFn, Seedable};
 
 type WorldPos = isize;
 type WorldCoord = (WorldPos, WorldPos, WorldPos);
@@ -35,11 +35,17 @@ impl World {
     pub fn generate_chunk(&mut self, coord: ChunkCoord) {
         let chunk_size = CHUNK_SIZE as BlockPos;
         let mut chunk = Chunk::new(coord);
+        let (cx, cy, cz) = chunk.to_world_coords((0, 0, 0));
         for x in 0..chunk_size {
             for z in 0..chunk_size {
                 // Range is between [-1, 1]
                 // https://github.com/Razaekel/noise-rs/issues/228#issuecomment-625513764
-                let height = (self.noise.get([x as f64 * 10.0, z as f64 * 10.0]) * 6.0 + 8.0) as WorldPos;
+                let height = (self.noise.get([
+                    (cx as BlockPos + x) as f64 / 10.0,
+                    (cz as BlockPos + z) as f64 / 10.0,
+                ]) * 6.0
+                    + 8.0) as WorldPos
+                    - cy;
                 let local_height = if height <= 0 {
                     0
                 } else if height >= chunk_size as WorldPos {

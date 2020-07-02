@@ -29,7 +29,7 @@ impl Chunk {
         }
     }
 
-    fn to_world_coords(&self, (bx, by, bz): BlockCoord) -> WorldCoord {
+    pub fn to_world_coords(&self, (bx, by, bz): BlockCoord) -> WorldCoord {
         let chunk_size = CHUNK_SIZE as WorldPos;
         let (cx, cy, cz) = self.location;
         (
