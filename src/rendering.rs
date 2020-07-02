@@ -64,7 +64,10 @@ impl Renderer {
         }
     }
 
-    pub fn start(self, mut controller: Box<dyn RenderController>) {
+    pub fn start<C>(self, mut controller: C)
+    where
+        C: RenderController + 'static,
+    {
         let display = self.display;
         let event_loop = self.event_loop;
         let program = self.program;

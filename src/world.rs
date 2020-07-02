@@ -41,8 +41,8 @@ impl World {
                 // Range is between [-1, 1]
                 // https://github.com/Razaekel/noise-rs/issues/228#issuecomment-625513764
                 let height = (self.noise.get([
-                    (cx as BlockPos + x) as f64 / 10.0,
-                    (cz as BlockPos + z) as f64 / 10.0,
+                    (cx as BlockPos + x) as f64 / 20.0,
+                    (cz as BlockPos + z) as f64 / 20.0,
                 ]) * 6.0
                     + 8.0) as WorldPos
                     - cy;

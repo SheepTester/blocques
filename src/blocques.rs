@@ -157,7 +157,7 @@ impl RenderController for Blocques {
         }
         if movement.magnitude() > 0.0 {
             self.camera_pos += UnitQuaternion::from_axis_angle(&Vector3::y_axis(), ry)
-                * movement.normalize().scale(elapsed * 2.0);
+                * movement.normalize().scale(elapsed * 4.0);
         }
 
         self.view = UnitQuaternion::from_axis_angle(&Vector3::z_axis(), -rz)
@@ -197,8 +197,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     let texture = Texture2d::new(&renderer.display, image)?;
 
     let mut controller = Blocques::new(texture, &renderer.display)?;
-    controller.camera_rot.1 = -3.0 * PI / 4.0;
-    controller.camera_rot.0 = PI / 4.0;
+    controller.camera_pos = Vector3::new(8.0, 14.0, 8.0);
     controller.world.generate_chunk((0, 0, 0));
     controller.world.set_block(
         (2, 2, 2),
@@ -212,6 +211,6 @@ pub fn main() -> Result<(), Box<dyn Error>> {
         .world
         .generate_vertices_for_chunks(vec![(0, 0, 0)], &controller.texture_info);
     controller.update_vertices_for_chunks(vec![(0, 0, 0)], &renderer.display)?;
-    renderer.start(Box::new(controller));
+    renderer.start(controller);
     Ok(())
 }
