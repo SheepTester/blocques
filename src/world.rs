@@ -1,7 +1,7 @@
 mod block;
 mod chunk;
 
-use crate::utils::{SubTextureInfo, Vertex};
+use crate::utils::Vertex;
 pub use block::Block;
 use chunk::AdjacentChunkManager;
 pub use chunk::{BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
@@ -84,15 +84,10 @@ impl World {
         }
     }
 
-    fn generate_vertices_for_chunk<'a>(
-        &'a mut self,
-        chunk_coord: ChunkCoord,
-        // TODO: Make texture_info a property of world
-        texture_info: &'a SubTextureInfo,
-    ) {
+    fn generate_vertices_for_chunk<'a>(&'a mut self, chunk_coord: ChunkCoord) {
         let generated = if let Some(chunk) = self.get_chunk(chunk_coord) {
             let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk_coord);
-            Some(chunk.generate_all_vertices(texture_info, adjacent_chunks))
+            Some(chunk.generate_all_vertices(adjacent_chunks))
         } else {
             None
         };
@@ -103,10 +98,10 @@ impl World {
         }
     }
 
-    pub fn ensure_ready_chunk<'a>(&mut self, coord: ChunkCoord, texture_info: &'a SubTextureInfo) {
+    pub fn ensure_ready_chunk(&mut self, coord: ChunkCoord) {
         if let None = self.chunks.get(&coord) {
             self.generate_chunk(coord);
-            self.generate_vertices_for_chunk(coord, texture_info);
+            self.generate_vertices_for_chunk(coord);
         }
     }
 

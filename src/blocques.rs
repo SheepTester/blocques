@@ -1,6 +1,6 @@
 use crate::{
     rendering::{FrameInfo, RenderController, RenderValues, Renderer},
-    utils::{self, SubTextureInfo, Vertex},
+    utils::{self, Vertex},
     world::{Block, ChunkCoord, World},
 };
 use glium::{
@@ -15,7 +15,6 @@ use std::{collections::HashMap, error::Error, f32::consts::PI};
 
 struct Blocques {
     world: World,
-    texture_info: SubTextureInfo,
 
     vertex_buffer: VertexBuffer<Vertex>,
     index_buffer: Option<IndexBuffer<u16>>,
@@ -38,11 +37,6 @@ impl Blocques {
         let vertices = vec![];
         Ok(Blocques {
             world: World::new(),
-            texture_info: SubTextureInfo {
-                x: 0.0,
-                y: 0.0,
-                size: 1.0,
-            },
 
             vertex_buffer: VertexBuffer::new(display, &vertices)?,
             index_buffer: None,
@@ -168,9 +162,9 @@ impl RenderController for Blocques {
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), -ry)
             * Translation3::from(self.camera_pos.scale(-1.0));
 
-        let loaded_chunks = vec![(0, 0, 0)];
+        let loaded_chunks = vec![(0, 0, 0), (-1, 0, -1), (0, 0, -1), (-1, 0, 0)];
         for chunk in &loaded_chunks {
-            self.world.ensure_ready_chunk(*chunk, &self.texture_info);
+            self.world.ensure_ready_chunk(*chunk);
         }
         if self.world.changed {
             // Ignores error
@@ -214,7 +208,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     controller.camera_pos = Vector3::new(8.0, 14.0, 8.0);
     controller
         .world
-        .ensure_ready_chunk((0, 0, 0), &controller.texture_info);
+        .ensure_ready_chunk((0, 0, 0));
     controller.world.set_block(
         (2, 2, 2),
         if let Block::Empty = controller.world.get_block((2, 2, 2)) {

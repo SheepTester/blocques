@@ -3,7 +3,7 @@ mod chunkarray;
 
 use super::block::Block;
 use super::{WorldCoord, WorldPos};
-use crate::utils::{SubTextureInfo, Vertex};
+use crate::utils::Vertex;
 pub use adjacent_manager::AdjacentChunkManager;
 pub use chunkarray::{ChunkArray, CHUNK_SIZE};
 use std::collections::HashMap;
@@ -50,7 +50,6 @@ impl Chunk {
 
     pub fn generate_all_vertices<'a>(
         &'a self,
-        texture_info: &'a SubTextureInfo,
         adj_chunk_manager: AdjacentChunkManager<'a>,
     ) -> HashMap<BlockCoord, Vec<Vertex>> {
         let mut vertices = HashMap::new();
@@ -60,7 +59,6 @@ impl Chunk {
                 block.get_vertices(
                     self.to_world_coords(pos),
                     pos,
-                    texture_info,
                     &adj_chunk_manager,
                 ),
             );
