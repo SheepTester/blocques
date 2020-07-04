@@ -59,7 +59,7 @@ impl<'a> AdjacentChunkManager<'a> {
         };
         match maybe_chunk {
             Some(chunk) => chunk.get_local_block(pos),
-            None => Block::default(),
+            None => Block::NotGenerated,
         }
     }
 }

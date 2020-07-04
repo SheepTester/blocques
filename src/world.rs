@@ -14,6 +14,7 @@ type WorldCoord = (WorldPos, WorldPos, WorldPos);
 pub struct World {
     chunks: HashMap<ChunkCoord, Chunk>,
     noise: Perlin,
+    pub changed: bool,
 }
 
 impl World {
@@ -21,6 +22,7 @@ impl World {
         World {
             chunks: HashMap::new(),
             noise: Perlin::new().set_seed(5),
+            changed: false,
         }
     }
 
@@ -32,7 +34,7 @@ impl World {
         self.chunks.get_mut(&coord)
     }
 
-    pub fn generate_chunk(&mut self, coord: ChunkCoord) {
+    fn generate_chunk(&mut self, coord: ChunkCoord) {
         let chunk_size = CHUNK_SIZE as BlockPos;
         let mut chunk = Chunk::new(coord);
         let (cx, cy, cz) = chunk.to_world_coords((0, 0, 0));
@@ -59,10 +61,12 @@ impl World {
             }
         }
         self.chunks.insert(coord, chunk);
+        self.changed = true;
     }
 
     fn edit_chunk(&mut self, coord: ChunkCoord) -> &mut Chunk {
         if let None = self.chunks.get(&coord) {
+            // NOTE: This doesn't generate vertices for the chunk
             self.generate_chunk(coord);
         }
         self.chunks.get_mut(&coord).unwrap()
@@ -80,30 +84,36 @@ impl World {
         }
     }
 
-    pub fn generate_vertices_for_chunks<'a>(
+    fn generate_vertices_for_chunk<'a>(
         &'a mut self,
-        chunk_coords: Vec<ChunkCoord>,
+        chunk_coord: ChunkCoord,
+        // TODO: Make texture_info a property of world
         texture_info: &'a SubTextureInfo,
     ) {
-        for chunk_coord in chunk_coords {
-            let generated = if let Some(chunk) = self.get_chunk(chunk_coord) {
-                let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk_coord);
-                Some(chunk.generate_all_vertices(texture_info, adjacent_chunks))
-            } else {
-                None
-            };
-            // Updating separately in order to not mix a mutable reference with an immutable
-            // reference
-            if let (Some(generated), Some(chunk)) = (generated, self.get_chunk_mut(chunk_coord)) {
-                chunk.update_generated_vertices(generated);
-            }
+        let generated = if let Some(chunk) = self.get_chunk(chunk_coord) {
+            let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk_coord);
+            Some(chunk.generate_all_vertices(texture_info, adjacent_chunks))
+        } else {
+            None
+        };
+        // Updating separately in order to not mix a mutable reference with an immutable
+        // reference
+        if let (Some(generated), Some(chunk)) = (generated, self.get_chunk_mut(chunk_coord)) {
+            chunk.update_generated_vertices(generated);
         }
     }
 
-    pub fn get_vertices_for_chunks(&self, chunk_coords: Vec<ChunkCoord>) -> Vec<Vertex> {
+    pub fn ensure_ready_chunk<'a>(&mut self, coord: ChunkCoord, texture_info: &'a SubTextureInfo) {
+        if let None = self.chunks.get(&coord) {
+            self.generate_chunk(coord);
+            self.generate_vertices_for_chunk(coord, texture_info);
+        }
+    }
+
+    pub fn get_vertices_for_chunks(&self, chunk_coords: &Vec<ChunkCoord>) -> Vec<Vertex> {
         let mut vertices = Vec::new();
         for chunk_coord in chunk_coords {
-            if let Some(chunk) = self.get_chunk(chunk_coord) {
+            if let Some(chunk) = self.get_chunk(*chunk_coord) {
                 for face_vertices in chunk.vertices.values() {
                     vertices.extend(face_vertices);
                 }
@@ -124,5 +134,6 @@ impl World {
             ),
             block,
         );
+        self.changed = true;
     }
 }

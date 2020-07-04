@@ -11,6 +11,7 @@ use std::iter::Iterator;
 pub enum Block {
     Empty,
     Filled,
+    NotGenerated,
 }
 
 impl Block {
@@ -18,6 +19,7 @@ impl Block {
         match self {
             Self::Empty => true,
             Self::Filled => false,
+            Self::NotGenerated => false,
         }
     }
 

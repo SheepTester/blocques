@@ -28,9 +28,15 @@ pub struct RenderValues<'a> {
     pub far: f32,
 }
 
+pub struct FrameInfo<'a> {
+    pub total_elapsed: f32,
+    pub elapsed: f32,
+    pub display: &'a Display,
+}
+
 pub trait RenderController {
     fn on_key_event(&mut self, _key_event: KeyboardInput) {}
-    fn on_frame(&mut self, _total_elapsed: f32, _elapsed: f32) {}
+    fn on_frame(&mut self, _info: FrameInfo) {}
     fn get_values(&self) -> RenderValues;
 }
 
@@ -108,7 +114,11 @@ impl Renderer {
 
             let mut target = display.draw();
 
-            controller.on_frame(total_elapsed, elapsed);
+            controller.on_frame(FrameInfo {
+                total_elapsed,
+                elapsed,
+                display: &display,
+            });
             let RenderValues {
                 vertex_buffer,
                 indices,

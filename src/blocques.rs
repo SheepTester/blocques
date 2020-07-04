@@ -1,5 +1,5 @@
 use crate::{
-    rendering::{RenderController, RenderValues, Renderer},
+    rendering::{FrameInfo, RenderController, RenderValues, Renderer},
     utils::{self, SubTextureInfo, Vertex},
     world::{Block, ChunkCoord, World},
 };
@@ -63,7 +63,7 @@ impl Blocques {
 
     fn update_vertices_for_chunks(
         &mut self,
-        chunk_coords: Vec<ChunkCoord>,
+        chunk_coords: &Vec<ChunkCoord>,
         display: &Display,
     ) -> Result<(), Box<dyn Error>> {
         let vertices = self.world.get_vertices_for_chunks(chunk_coords);
@@ -112,7 +112,10 @@ impl RenderController for Blocques {
         }
     }
 
-    fn on_frame(&mut self, _total_elapsed: f32, elapsed: f32) {
+    fn on_frame(&mut self, info: FrameInfo) {
+        let FrameInfo {
+            elapsed, display, ..
+        } = info;
         let rotation_change = elapsed * PI / 2.0;
         if self.is_key_down(&KeyCode::Left) {
             self.camera_rot.1 += rotation_change;
@@ -164,6 +167,17 @@ impl RenderController for Blocques {
             * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), -rx)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), -ry)
             * Translation3::from(self.camera_pos.scale(-1.0));
+
+        let loaded_chunks = vec![(0, 0, 0)];
+        for chunk in &loaded_chunks {
+            self.world.ensure_ready_chunk(*chunk, &self.texture_info);
+        }
+        if self.world.changed {
+            // Ignores error
+            if let Ok(()) = self.update_vertices_for_chunks(&loaded_chunks, display) {
+                self.world.changed = false;
+            }
+        }
     }
 
     fn get_values(&self) -> RenderValues {
@@ -198,7 +212,9 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     let mut controller = Blocques::new(texture, &renderer.display)?;
     controller.camera_pos = Vector3::new(8.0, 14.0, 8.0);
-    controller.world.generate_chunk((0, 0, 0));
+    controller
+        .world
+        .ensure_ready_chunk((0, 0, 0), &controller.texture_info);
     controller.world.set_block(
         (2, 2, 2),
         if let Block::Empty = controller.world.get_block((2, 2, 2)) {
@@ -207,10 +223,6 @@ pub fn main() -> Result<(), Box<dyn Error>> {
             Block::Empty
         },
     );
-    controller
-        .world
-        .generate_vertices_for_chunks(vec![(0, 0, 0)], &controller.texture_info);
-    controller.update_vertices_for_chunks(vec![(0, 0, 0)], &renderer.display)?;
     renderer.start(controller);
     Ok(())
 }
