@@ -1,4 +1,5 @@
 use super::utils::Vertex;
+use failure::Error;
 use glium::{
     draw_parameters::{BackfaceCullingMode, DepthTest},
     glutin::{
@@ -47,11 +48,11 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, Error> {
         let event_loop = EventLoop::new();
         let wb = WindowBuilder::new().with_title("B L O C Q U E S");
         let cb = ContextBuilder::new().with_depth_buffer(24);
-        let display = Display::new(wb, cb, &event_loop).unwrap();
+        let display = Display::new(wb, cb, &event_loop)?;
         let program = Program::from_source(
             &display,
             String::from_utf8_lossy(include_bytes!("./rendering/shader.vert"))
@@ -61,13 +62,12 @@ impl Renderer {
                 .into_owned()
                 .as_str(),
             None,
-        )
-        .unwrap();
-        Renderer {
+        )?;
+        Ok(Renderer {
             event_loop,
             display,
             program,
-        }
+        })
     }
 
     pub fn start<C>(self, mut controller: C)

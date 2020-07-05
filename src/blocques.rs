@@ -227,9 +227,9 @@ impl RenderController for Blocques {
 }
 
 pub fn main() -> Result<(), Error> {
-    let renderer = Renderer::new();
+    let renderer = Renderer::new()?;
 
-    let image = utils::load_image(include_bytes!("./assets/blocques2.png"));
+    let image = utils::load_image(include_bytes!("./assets/blocques2.png"))?;
     let texture = Texture2d::new(&renderer.display, image)?;
 
     let mut controller = Blocques::new(
