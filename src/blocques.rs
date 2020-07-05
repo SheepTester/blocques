@@ -1,7 +1,7 @@
 use crate::{
     rendering::{FrameInfo, RenderController, RenderValues, Renderer},
     utils::{self, Vertex},
-    world::{Block, ChunkCoord, ChunkPos, World},
+    world::{Block, ChunkCoord, ChunkPos, World, CHUNK_SIZE},
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
@@ -33,6 +33,8 @@ struct Blocques {
     world: World,
     vert_loaded_radius: ChunkPos,
     horiz_loaded_radius: ChunkPos,
+    last_centre: ChunkCoord,
+    loaded_chunks: Vec<ChunkCoord>,
 
     vertex_buffer: VertexBuffer<Vertex>,
     index_buffer: Option<IndexBuffer<u32>>,
@@ -53,10 +55,12 @@ struct Blocques {
 impl Blocques {
     fn new(texture: Texture2d, display: &Display, options: BlocquesOptions) -> Result<Self, Error> {
         let vertices = vec![];
-        Ok(Blocques {
+        let mut new = Blocques {
             world: World::new(),
             vert_loaded_radius: options.vert_loaded_radius as ChunkPos,
             horiz_loaded_radius: options.horiz_loaded_radius as ChunkPos,
+            last_centre: (0, 0, 0),
+            loaded_chunks: Vec::new(),
 
             vertex_buffer: VertexBuffer::new(display, &vertices)?,
             index_buffer: None,
@@ -72,15 +76,41 @@ impl Blocques {
             camera_rot: (0.0, 0.0, 0.0),
 
             keys: HashMap::new(),
-        })
+        };
+        new.set_loaded_chunks((0, 0, 0));
+        Ok(new)
     }
 
-    fn update_vertices_for_chunks(
+    fn get_current_centre(&self) -> ChunkCoord {
+        let chunk_size = CHUNK_SIZE as f32;
+        (
+            (self.camera_pos.x / chunk_size).floor() as ChunkPos,
+            (self.camera_pos.y / chunk_size).floor() as ChunkPos,
+            (self.camera_pos.z / chunk_size).floor() as ChunkPos,
+        )
+    }
+
+    fn set_loaded_chunks(&mut self, centre: ChunkCoord) {
+        let vert_loaded_radius = self.vert_loaded_radius;
+        let horiz_loaded_radius = self.horiz_loaded_radius;
+        let (cx, cy, cz) = centre;
+        self.loaded_chunks = (-horiz_loaded_radius..=horiz_loaded_radius)
+            .flat_map(|dx| {
+                (-horiz_loaded_radius..=horiz_loaded_radius).flat_map(move |dz| {
+                    (-vert_loaded_radius..=vert_loaded_radius)
+                        .map(move |dy| (dx + cx, dy + cy, dz + cz))
+                })
+            })
+            .collect();
+        self.last_centre = centre;
+        self.world.changed = true;
+    }
+
+    fn update_loaded_vertices(
         &mut self,
-        chunk_coords: &Vec<ChunkCoord>,
         display: &Display,
     ) -> Result<(), Error> {
-        let vertices = self.world.get_vertices_for_chunks(chunk_coords);
+        let vertices = self.world.get_vertices_for_chunks(&self.loaded_chunks);
         self.vertex_buffer = VertexBuffer::new(display, &vertices)?;
 
         let squares = vertices.len() / 4;
@@ -182,21 +212,17 @@ impl RenderController for Blocques {
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), -ry)
             * Translation3::from(self.camera_pos.scale(-1.0));
 
-        let vert_loaded_radius = self.vert_loaded_radius;
-        let horiz_loaded_radius = self.horiz_loaded_radius;
-        let loaded_chunks: Vec<ChunkCoord> = (-horiz_loaded_radius..=horiz_loaded_radius)
-            .flat_map(|dx| {
-                (-horiz_loaded_radius..=horiz_loaded_radius).flat_map(move |dz| {
-                    (-vert_loaded_radius..=vert_loaded_radius).map(move |dy| (dx, dy, dz))
-                })
-            })
-            .collect();
-        for chunk in &loaded_chunks {
+        let current_centre = self.get_current_centre();
+        if current_centre != self.last_centre {
+            self.set_loaded_chunks(current_centre);
+        }
+
+        for chunk in &self.loaded_chunks {
             self.world.ensure_ready_chunk(*chunk);
         }
         if self.world.changed {
             // Ignores error
-            if let Ok(()) = self.update_vertices_for_chunks(&loaded_chunks, display) {
+            if let Ok(()) = self.update_loaded_vertices(display) {
                 self.world.changed = false;
             }
         }
