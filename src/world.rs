@@ -64,11 +64,15 @@ impl World {
         self.changed = true;
     }
 
-    fn edit_chunk(&mut self, coord: ChunkCoord) -> &mut Chunk {
+    pub fn ensure_ready_chunk(&mut self, coord: ChunkCoord) {
         if let None = self.chunks.get(&coord) {
-            // NOTE: This doesn't generate vertices for the chunk
             self.generate_chunk(coord);
+            self.generate_vertices_for_chunk(coord);
         }
+    }
+
+    fn edit_chunk(&mut self, coord: ChunkCoord) -> &mut Chunk {
+        self.ensure_ready_chunk(coord);
         self.chunks.get_mut(&coord).unwrap()
     }
 
@@ -86,8 +90,7 @@ impl World {
 
     fn generate_vertices_for_chunk<'a>(&'a mut self, chunk_coord: ChunkCoord) {
         let generated = if let Some(chunk) = self.get_chunk(chunk_coord) {
-            let adjacent_chunks = AdjacentChunkManager::from_world(self, chunk_coord);
-            Some(chunk.generate_all_vertices(adjacent_chunks))
+            Some(chunk.generate_all_vertices(AdjacentChunkManager::from_world(self, chunk_coord)))
         } else {
             None
         };
@@ -95,13 +98,6 @@ impl World {
         // reference
         if let (Some(generated), Some(chunk)) = (generated, self.get_chunk_mut(chunk_coord)) {
             chunk.update_generated_vertices(generated);
-        }
-    }
-
-    pub fn ensure_ready_chunk(&mut self, coord: ChunkCoord) {
-        if let None = self.chunks.get(&coord) {
-            self.generate_chunk(coord);
-            self.generate_vertices_for_chunk(coord);
         }
     }
 

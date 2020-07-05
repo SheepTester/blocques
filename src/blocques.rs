@@ -11,7 +11,9 @@ use glium::{
     Display, IndexBuffer, VertexBuffer,
 };
 use nalgebra::{Isometry3, Similarity3, Translation3, UnitQuaternion, Vector3};
-use std::{collections::HashMap, error::Error, f32::consts::PI};
+use std::{collections::HashMap, f32::consts::PI};
+// https://stackoverflow.com/a/48431339
+use failure::Error;
 
 struct Blocques {
     world: World,
@@ -33,7 +35,7 @@ struct Blocques {
 }
 
 impl Blocques {
-    fn new(texture: Texture2d, display: &Display) -> Result<Self, Box<dyn Error>> {
+    fn new(texture: Texture2d, display: &Display) -> Result<Self, Error> {
         let vertices = vec![];
         Ok(Blocques {
             world: World::new(),
@@ -59,7 +61,7 @@ impl Blocques {
         &mut self,
         chunk_coords: &Vec<ChunkCoord>,
         display: &Display,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Error> {
         let vertices = self.world.get_vertices_for_chunks(chunk_coords);
         self.vertex_buffer = VertexBuffer::new(display, &vertices)?;
 
@@ -198,7 +200,7 @@ impl RenderController for Blocques {
     }
 }
 
-pub fn main() -> Result<(), Box<dyn Error>> {
+pub fn main() -> Result<(), Error> {
     let renderer = Renderer::new();
 
     let image = utils::load_image(include_bytes!("./assets/blocques2.png"));
