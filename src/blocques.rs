@@ -1,7 +1,7 @@
 use crate::{
     rendering::{FrameInfo, RenderController, RenderValues, Renderer},
     utils::{self, Vertex},
-    world::{Block, ChunkCoord, World},
+    world::{Block, ChunkCoord, ChunkPos, World},
 };
 use glium::{
     glutin::event::{ElementState, KeyboardInput, VirtualKeyCode as KeyCode},
@@ -15,11 +15,27 @@ use std::{collections::HashMap, f32::consts::PI};
 // https://stackoverflow.com/a/48431339
 use failure::Error;
 
+struct BlocquesOptions {
+    vert_loaded_radius: u8,
+    horiz_loaded_radius: u8,
+}
+
+impl Default for BlocquesOptions {
+    fn default() -> Self {
+        Self {
+            vert_loaded_radius: 1,
+            horiz_loaded_radius: 1,
+        }
+    }
+}
+
 struct Blocques {
     world: World,
+    vert_loaded_radius: ChunkPos,
+    horiz_loaded_radius: ChunkPos,
 
     vertex_buffer: VertexBuffer<Vertex>,
-    index_buffer: Option<IndexBuffer<u16>>,
+    index_buffer: Option<IndexBuffer<u32>>,
     model: Similarity3<f32>,
     view: Isometry3<f32>,
     texture: Texture2d,
@@ -35,10 +51,12 @@ struct Blocques {
 }
 
 impl Blocques {
-    fn new(texture: Texture2d, display: &Display) -> Result<Self, Error> {
+    fn new(texture: Texture2d, display: &Display, options: BlocquesOptions) -> Result<Self, Error> {
         let vertices = vec![];
         Ok(Blocques {
             world: World::new(),
+            vert_loaded_radius: options.vert_loaded_radius as ChunkPos,
+            horiz_loaded_radius: options.horiz_loaded_radius as ChunkPos,
 
             vertex_buffer: VertexBuffer::new(display, &vertices)?,
             index_buffer: None,
@@ -68,7 +86,7 @@ impl Blocques {
         let squares = vertices.len() / 4;
         let mut indices = Vec::with_capacity(squares * 6);
         for square in 0..squares {
-            let i = square as u16 * 4;
+            let i = square as u32 * 4;
             indices.extend(vec![i, i + 1, i + 3, i + 1, i + 2, i + 3]);
         }
         self.index_buffer = Some(IndexBuffer::new(
@@ -164,7 +182,15 @@ impl RenderController for Blocques {
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), -ry)
             * Translation3::from(self.camera_pos.scale(-1.0));
 
-        let loaded_chunks = vec![(0, 0, 0), (-1, 0, -1), (0, 0, -1), (-1, 0, 0)];
+        let vert_loaded_radius = self.vert_loaded_radius;
+        let horiz_loaded_radius = self.horiz_loaded_radius;
+        let loaded_chunks: Vec<ChunkCoord> = (-horiz_loaded_radius..=horiz_loaded_radius)
+            .flat_map(|dx| {
+                (-horiz_loaded_radius..=horiz_loaded_radius).flat_map(move |dz| {
+                    (-vert_loaded_radius..=vert_loaded_radius).map(move |dy| (dx, dy, dz))
+                })
+            })
+            .collect();
         for chunk in &loaded_chunks {
             self.world.ensure_ready_chunk(*chunk);
         }
@@ -206,11 +232,16 @@ pub fn main() -> Result<(), Error> {
     let image = utils::load_image(include_bytes!("./assets/blocques2.png"));
     let texture = Texture2d::new(&renderer.display, image)?;
 
-    let mut controller = Blocques::new(texture, &renderer.display)?;
+    let mut controller = Blocques::new(
+        texture,
+        &renderer.display,
+        BlocquesOptions {
+            vert_loaded_radius: 1,
+            horiz_loaded_radius: 3,
+        },
+    )?;
     controller.camera_pos = Vector3::new(8.0, 14.0, 8.0);
-    controller
-        .world
-        .ensure_ready_chunk((0, 0, 0));
+    controller.world.ensure_ready_chunk((0, 0, 0));
     controller.world.set_block(
         (2, 2, 2),
         if let Block::Empty = controller.world.get_block((2, 2, 2)) {

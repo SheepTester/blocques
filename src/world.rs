@@ -4,7 +4,7 @@ mod chunk;
 use crate::utils::Vertex;
 pub use block::Block;
 use chunk::AdjacentChunkManager;
-pub use chunk::{BlockPos, Chunk, ChunkCoord, CHUNK_SIZE};
+pub use chunk::{BlockPos, BlockCoord, Chunk, ChunkCoord, ChunkPos, CHUNK_SIZE};
 use noise::{NoiseFn, Perlin, Seedable};
 use std::collections::HashMap;
 
