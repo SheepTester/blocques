@@ -11,7 +11,7 @@ use glium::{
     Display, IndexBuffer, VertexBuffer,
 };
 use nalgebra::{Isometry3, Similarity3, Translation3, UnitQuaternion, Vector3};
-use std::{collections::HashMap, f32::consts::PI};
+use std::{collections::HashMap, f32::consts::PI, sync::mpsc, thread};
 // https://stackoverflow.com/a/48431339
 use failure::Error;
 
@@ -35,6 +35,8 @@ struct Blocques {
     horiz_loaded_radius: ChunkPos,
     last_centre: ChunkCoord,
     loaded_chunks: Vec<ChunkCoord>,
+    new_buffer_request: mpsc::Sender<()>,
+    new_buffer_receiver: mpsc::Receiver<(Vec<Vertex>, Vec<u32>)>,
 
     vertex_buffer: VertexBuffer<Vertex>,
     index_buffer: Option<IndexBuffer<u32>>,
@@ -55,12 +57,18 @@ struct Blocques {
 impl Blocques {
     fn new(texture: Texture2d, display: &Display, options: BlocquesOptions) -> Result<Self, Error> {
         let vertices = vec![];
+
+        let (request_sender, request_receiver) = mpsc::channel();
+        let (new_buffer_sender, new_buffer_receiver) = mpsc::channel();
+
         let mut new = Blocques {
             world: World::new(),
             vert_loaded_radius: options.vert_loaded_radius as ChunkPos,
             horiz_loaded_radius: options.horiz_loaded_radius as ChunkPos,
             last_centre: (0, 0, 0),
             loaded_chunks: Vec::new(),
+            new_buffer_request: request_sender,
+            new_buffer_receiver,
 
             vertex_buffer: VertexBuffer::new(display, &vertices)?,
             index_buffer: None,
@@ -78,6 +86,8 @@ impl Blocques {
             keys: HashMap::new(),
         };
         new.set_loaded_chunks((0, 0, 0));
+        thread::spawn(|| Self::update_loaded_vertices(request_receiver, new_buffer_sender));
+
         Ok(new)
     }
 
@@ -107,23 +117,19 @@ impl Blocques {
     }
 
     fn update_loaded_vertices(
-        &mut self,
-        display: &Display,
+        receiver: mpsc::Receiver<()>,
+        sender: mpsc::Sender<(Vec<Vertex>, Vec<u32>)>,
     ) -> Result<(), Error> {
-        let vertices = self.world.get_vertices_for_chunks(&self.loaded_chunks);
-        self.vertex_buffer = VertexBuffer::new(display, &vertices)?;
-
-        let squares = vertices.len() / 4;
-        let mut indices = Vec::with_capacity(squares * 6);
-        for square in 0..squares {
-            let i = square as u32 * 4;
-            indices.extend(vec![i, i + 1, i + 3, i + 1, i + 2, i + 3]);
+        for _ in receiver {
+            let vertices = self.world.get_vertices_for_chunks(&self.loaded_chunks);
+            let squares: usize = vertices.len() / 4;
+            let mut indices = Vec::with_capacity(squares * 6);
+            for square in 0..squares {
+                let i = square as u32 * 4;
+                indices.extend(vec![i, i + 1, i + 3, i + 1, i + 2, i + 3]);
+            }
+            sender.send((vertices, indices))?;
         }
-        self.index_buffer = Some(IndexBuffer::new(
-            display,
-            PrimitiveType::TrianglesList,
-            &indices,
-        )?);
         Ok(())
     }
 
@@ -221,9 +227,15 @@ impl RenderController for Blocques {
             self.world.ensure_ready_chunk(*chunk);
         }
         if self.world.changed {
-            // Ignores error
-            if let Ok(()) = self.update_loaded_vertices(display) {
-                self.world.changed = false;
+            self.new_buffer_request.send(());
+        }
+        if let Ok((vertices, indices)) = self.new_buffer_receiver.try_recv() {
+            if let (Ok(vertex_buffer), Ok(index_buffer)) = (
+                VertexBuffer::new(display, &vertices),
+                IndexBuffer::new(display, PrimitiveType::TrianglesList, &indices),
+            ) {
+                self.vertex_buffer = vertex_buffer;
+                self.index_buffer = Some(index_buffer);
             }
         }
     }
